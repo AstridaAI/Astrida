@@ -1,13 +1,15 @@
-Astrida.xyz
+https://astrida.xyz/
+https://x.com/Astridaxyz
+https://github.com/AstridaAI/Astrida
 
 
- ¦¦¦¦¦  ¦¦¦¦¦¦¦ ¦¦¦¦¦¦¦¦ ¦¦¦¦¦¦  ¦¦ ¦¦¦¦¦¦   ¦¦¦¦¦  
-¦¦   ¦¦ ¦¦         ¦¦    ¦¦   ¦¦ ¦¦ ¦¦   ¦¦ ¦¦   ¦¦ 
-¦¦¦¦¦¦¦ ¦¦¦¦¦¦¦    ¦¦    ¦¦¦¦¦¦  ¦¦ ¦¦   ¦¦ ¦¦¦¦¦¦¦ 
-¦¦   ¦¦      ¦¦    ¦¦    ¦¦   ¦¦ ¦¦ ¦¦   ¦¦ ¦¦   ¦¦ 
-¦¦   ¦¦ ¦¦¦¦¦¦¦    ¦¦    ¦¦   ¦¦ ¦¦ ¦¦¦¦¦¦  ¦¦   ¦¦ 
-                                                    
-                                                    
+ Â¦Â¦Â¦Â¦Â¦  Â¦Â¦Â¦Â¦Â¦Â¦Â¦ Â¦Â¦Â¦Â¦Â¦Â¦Â¦Â¦ Â¦Â¦Â¦Â¦Â¦Â¦  Â¦Â¦ Â¦Â¦Â¦Â¦Â¦Â¦   Â¦Â¦Â¦Â¦Â¦  
+Â¦Â¦   Â¦Â¦ Â¦Â¦         Â¦Â¦    Â¦Â¦   Â¦Â¦ Â¦Â¦ Â¦Â¦   Â¦Â¦ Â¦Â¦   Â¦Â¦ 
+Â¦Â¦Â¦Â¦Â¦Â¦Â¦ Â¦Â¦Â¦Â¦Â¦Â¦Â¦    Â¦Â¦    Â¦Â¦Â¦Â¦Â¦Â¦  Â¦Â¦ Â¦Â¦   Â¦Â¦ Â¦Â¦Â¦Â¦Â¦Â¦Â¦ 
+Â¦Â¦   Â¦Â¦      Â¦Â¦    Â¦Â¦    Â¦Â¦   Â¦Â¦ Â¦Â¦ Â¦Â¦   Â¦Â¦ Â¦Â¦   Â¦Â¦ 
+Â¦Â¦   Â¦Â¦ Â¦Â¦Â¦Â¦Â¦Â¦Â¦    Â¦Â¦    Â¦Â¦   Â¦Â¦ Â¦Â¦ Â¦Â¦Â¦Â¦Â¦Â¦  Â¦Â¦   Â¦Â¦ 
+                                                                                                        
+
 Project Overview
 
 Astrida AI is an advanced Artificial Intelligence (AI) framework built using JavaScript. It leverages a variety of machine learning concepts and advanced techniques to demonstrate the potential of intelligent systems. Astrida AI is designed to evolve over time, learning from various data inputs and optimizing its decision-making capabilities. Through this project, you will explore key concepts like neural networks, deep learning, reinforcement learning, and advanced optimization algorithms, all of which contribute to the development of a more autonomous and capable AI system.
@@ -29,12 +31,12 @@ Key Components
     Activation Functions: Implements various activation functions such as ReLU, Sigmoid, and Softmax for each layer.
     Optimizer: An advanced optimizer for adjusting weights during training.
     Training Loop: Simulates training of the neural network on tasks like the XOR problem, with loss evaluation and backpropagation.
-    Reinforcement Learning: A module implementing reinforcement learning techniques to adapt Astrida’s behavior based on interaction with its environment.
+    Reinforcement Learning: A module implementing reinforcement learning techniques to adapt Astridaâ€™s behavior based on interaction with its environment.
 
 Requirements
 
     JavaScript/ES6: The code is written in modern JavaScript (ES6), leveraging classes, promises, and other advanced JavaScript features.
-    Web Browser: You can run Astrida AI in any modern web browser. Simply include the relevant JavaScript files in an HTML document, or run the code directly in the browser’s developer console.
+    Web Browser: You can run Astrida AI in any modern web browser. Simply include the relevant JavaScript files in an HTML document, or run the code directly in the browserâ€™s developer console.
 
 Setup Instructions
 
