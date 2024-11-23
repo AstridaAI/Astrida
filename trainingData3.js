@@ -11,1665 +11,6 @@
  * ------------------------------------------------------------
  */
 
-// Training data (x -> input, y -> output)
-const trainingData = [
-    { x: 1, y: 2 },
-    { x: 2, y: 4 },
-    { x: 3, y: 6 },
-    { x: 4, y: 8 },
-];
-
-// Initial parameters for the model
-let weight = Math.random(); // Start with a random weight
-let bias = Math.random();   // Start with a random bias
-const learningRate = 0.01;  // Controls the size of adjustments during learning
-
-// Hypothesis function: y = weight * x + bias
-function predict(x) {
-    return weight * x + bias;
-}
-
-// Loss function: Mean Squared Error
-function calculateLoss() {
-    let totalError = 0;
-    trainingData.forEach(({ x, y }) => {
-        const prediction = predict(x);
-        totalError += (prediction - y) ** 2;
-    });
-    return totalError / trainingData.length;
-}
-
-// Training function: Adjust weight and bias using Gradient Descent
-function train() {
-    let weightGradient = 0;
-    let biasGradient = 0;
-
-    trainingData.forEach(({ x, y }) => {
-        const prediction = predict(x);
-        weightGradient += 2 * x * (prediction - y);
-        biasGradient += 2 * (prediction - y);
-    });
-
-    // Average gradients over the dataset
-    weightGradient /= trainingData.length;
-    biasGradient /= trainingData.length;
-
-    // Update weight and bias
-    weight -= learningRate * weightGradient;
-    bias -= learningRate * biasGradient;
-}
-
-// Train the model for a specified number of epochs
-function trainModel(epochs) {
-    console.log("Training started...");
-    for (let i = 0; i < epochs; i++) {
-        train();
-        if (i % 100 === 0) {
-            console.log(`Epoch ${i}: Loss = ${calculateLoss().toFixed(4)}`);
-        }
-    }
-    console.log("Training completed.");
-    console.log(`Final Model: y = ${weight.toFixed(4)} * x + ${bias.toFixed(4)}`);
-}
-
-// Test the model with new inputs
-function testModel(testData) {
-    console.log("\nTesting model...");
-    testData.forEach((x) => {
-        const prediction = predict(x);
-        console.log(`Input: ${x}, Prediction: ${prediction.toFixed(4)}`);
-    });
-}
-
-// Run the demonstration
-trainModel(1000); // Train for 1000 epochs
-testModel([5, 6, 7]);
-
-/**
- * Helper Modules
- * --------------------------------------------------------
- */
-
-// Module: Linear Algebra Operations
-const LinearAlgebra = {
-    /**
-     * Perform dot product between two vectors.
-     * @param {number[]} vec1 - The first vector.
-     * @param {number[]} vec2 - The second vector.
-     * @returns {number} The result of the dot product.
-     */
-    dotProduct(vec1, vec2) {
-        if (vec1.length !== vec2.length) {
-            throw new Error("Vectors must be of the same length");
-        }
-        let result = 0;
-        for (let i = 0; i < vec1.length; i++) {
-            result += vec1[i] * vec2[i];
-        }
-        return result;
-    },
-
-    /**
-     * Transpose a matrix.
-     * @param {number[][]} matrix - The matrix to transpose.
-     * @returns {number[][]} The transposed matrix.
-     */
-    transpose(matrix) {
-        const transposed = [];
-        for (let i = 0; i < matrix[0].length; i++) {
-            transposed.push(matrix.map(row => row[i]));
-        }
-        return transposed;
-    }
-};
-
-// Module: Activation Functions
-const ActivationFunctions = {
-    sigmoid(x) {
-        return 1 / (1 + Math.exp(-x));
-    },
-
-    sigmoidDerivative(x) {
-        return this.sigmoid(x) * (1 - this.sigmoid(x));
-    },
-
-    relu(x) {
-        return Math.max(0, x);
-    },
-
-    reluDerivative(x) {
-        return x > 0 ? 1 : 0;
-    },
-
-    tanh(x) {
-        return Math.tanh(x);
-    },
-
-    tanhDerivative(x) {
-        return 1 - Math.pow(Math.tanh(x), 2);
-    }
-};
-
-/**
- * Neural Network Implementation
- * --------------------------------------------------------
- */
-class NeuralNetwork {
-    constructor(inputSize, hiddenSize, outputSize) {
-        this.inputSize = inputSize; // Number of input neurons
-        this.hiddenSize = hiddenSize; // Number of hidden neurons
-        this.outputSize = outputSize; // Number of output neurons
-
-        // Initialize weights and biases with random values
-        this.weightsInputHidden = this.initializeWeights(inputSize, hiddenSize);
-        this.weightsHiddenOutput = this.initializeWeights(hiddenSize, outputSize);
-        this.biasHidden = Array(hiddenSize).fill(Math.random());
-        this.biasOutput = Array(outputSize).fill(Math.random());
-    }
-
-    /**
-     * Initialize weights with random values between -1 and 1.
-     * @param {number} rows - Number of rows (from layer size).
-     * @param {number} cols - Number of columns (to layer size).
-     * @returns {number[][]} A 2D array of weights.
-     */
-    initializeWeights(rows, cols) {
-        const weights = [];
-        for (let i = 0; i < rows; i++) {
-            const row = [];
-            for (let j = 0; j < cols; j++) {
-                row.push(Math.random() * 2 - 1); // Random value between -1 and 1
-            }
-            weights.push(row);
-        }
-        return weights;
-    }
-
-    /**
-     * Forward pass through the network.
-     * @param {number[]} input - The input data.
-     * @returns {number[]} The output predictions.
-     */
-    forwardPass(input) {
-        if (input.length !== this.inputSize) {
-            throw new Error("Input size does not match the network configuration.");
-        }
-
-        // Compute hidden layer activations
-        const hiddenInputs = this.computeLayerOutput(input, this.weightsInputHidden, this.biasHidden);
-        const hiddenActivations = hiddenInputs.map(ActivationFunctions.relu);
-
-        // Compute output layer activations
-        const outputInputs = this.computeLayerOutput(hiddenActivations, this.weightsHiddenOutput, this.biasOutput);
-        const outputs = outputInputs.map(ActivationFunctions.sigmoid);
-
-        return outputs;
-    }
-
-    /**
-     * Compute the output of a layer.
-     * @param {number[]} inputs - Input to the layer.
-     * @param {number[][]} weights - Weights connecting this layer to the next.
-     * @param {number[]} biases - Biases for this layer.
-     * @returns {number[]} The raw outputs of the layer.
-     */
-    computeLayerOutput(inputs, weights, biases) {
-        const outputs = [];
-        for (let i = 0; i < weights[0].length; i++) {
-            const weightColumn = weights.map(row => row[i]);
-            const dot = LinearAlgebra.dotProduct(inputs, weightColumn);
-            outputs.push(dot + biases[i]);
-        }
-        return outputs;
-    }
-}
-
-/**
- * Training Logic
- * --------------------------------------------------------
- */
-
-// Create a neural network with 3 input neurons, 4 hidden neurons, and 2 output neurons
-const nn5 = new NeuralNetwork(3, 4, 2);
-
-// Training Data
-const trainingData2 = [
-    { inputs: [0, 0, 1], outputs: [0, 1] },
-    { inputs: [1, 0, 0], outputs: [1, 0] },
-    { inputs: [1, 1, 0], outputs: [1, 1] },
-    { inputs: [0, 1, 1], outputs: [0, 0] }
-];
-
-// Train for a fixed number of epochs
-const epochs = 10000;
-for (let i = 0; i < epochs; i++) {
-    trainingData.forEach(data => {
-        // Forward pass
-        const predicted = nn.forwardPass(data.inputs);
-
-        // TODO: Add backpropagation logic here for weight updates
-
-        // Log progress periodically
-        if (i % 1000 === 0) {
-            console.log(`Epoch ${i}: Predicted = ${predicted}, Actual = ${data.outputs}`);
-        }
-    });
-}
-
-// Test the model with new data
-const testInput = [1, 0, 1];
-const prediction = nn.forwardPass(testInput);
-console.log(`Test Input: ${testInput}, Prediction: ${prediction}`);
-
-// Module: Data Preprocessing
-const DataPreprocessing = {
-    /**
-     * Normalize a dataset to have values between 0 and 1.
-     * @param {number[][]} data - 2D array of numerical data.
-     * @returns {number[][]} Normalized dataset.
-     */
-    normalize(data) {
-        const minMax = this.getMinMax(data);
-        return data.map(row =>
-            row.map((value, index) => (value - minMax.min[index]) / (minMax.max[index] - minMax.min[index]))
-        );
-    },
-
-    /**
-     * Get the min and max values for each column in a dataset.
-     * @param {number[][]} data - 2D array of numerical data.
-     * @returns {object} An object with min and max arrays.
-     */
-    getMinMax(data) {
-        const min = Array(data[0].length).fill(Infinity);
-        const max = Array(data[0].length).fill(-Infinity);
-
-        data.forEach(row => {
-            row.forEach((value, index) => {
-                if (value < min[index]) min[index] = value;
-                if (value > max[index]) max[index] = value;
-            });
-        });
-
-        return { min, max };
-    }
-};
-
-// Module: Loss Functions
-const LossFunctions = {
-    /**
-     * Calculate Mean Squared Error (MSE).
-     * @param {number[]} predicted - Predicted values.
-     * @param {number[]} actual - Actual target values.
-     * @returns {number} The mean squared error.
-     */
-    meanSquaredError(predicted, actual) {
-        const sumSquaredError = predicted.reduce((sum, p, i) => sum + Math.pow(p - actual[i], 2), 0);
-        return sumSquaredError / predicted.length;
-    },
-
-    /**
-     * Calculate Cross-Entropy Loss.
-     * @param {number[]} predicted - Predicted probabilities.
-     * @param {number[]} actual - Actual target labels (one-hot encoded).
-     * @returns {number} The cross-entropy loss.
-     */
-    crossEntropy(predicted, actual) {
-        let loss = 0;
-        for (let i = 0; i < actual.length; i++) {
-            loss -= actual[i] * Math.log(predicted[i]) + (1 - actual[i]) * Math.log(1 - predicted[i]);
-        }
-        return loss / actual.length;
-    }
-};
-
-// Module: Optimizer
-class GradientDescent {
-    constructor(learningRate = 0.01, momentum = 0.9) {
-        this.learningRate = learningRate;
-        this.momentum = momentum;
-        this.previousDeltas = new Map(); // Store previous updates for momentum
-    }
-
-    /**
-     * Update weights using gradient descent.
-     * @param {number[][]} weights - Current weights of the network.
-     * @param {number[][]} gradients - Gradients computed via backpropagation.
-     * @returns {number[][]} Updated weights.
-     */
-    updateWeights(weights, gradients) {
-        const updatedWeights = [];
-
-        for (let i = 0; i < weights.length; i++) {
-            const updatedRow = [];
-            for (let j = 0; j < weights[i].length; j++) {
-                const key = `${i}-${j}`; // Unique key for weight
-                const delta = -this.learningRate * gradients[i][j];
-
-                // Apply momentum if applicable
-                const previousDelta = this.previousDeltas.get(key) || 0;
-                const momentumAdjustedDelta = delta + this.momentum * previousDelta;
-
-                updatedRow.push(weights[i][j] + momentumAdjustedDelta);
-
-                // Store the delta for the next iteration
-                this.previousDeltas.set(key, momentumAdjustedDelta);
-            }
-            updatedWeights.push(updatedRow);
-        }
-
-        return updatedWeights;
-    }
-}
-
-// Backpropagation Implementation
-class Backpropagation {
-    constructor(learningRate) {
-        this.optimizer = new GradientDescent(learningRate);
-    }
-
-    /**
-     * Perform backpropagation to compute gradients and update weights.
-     * @param {NeuralNetwork} network - The neural network object.
-     * @param {number[]} inputs - Input data.
-     * @param {number[]} targets - Target output.
-     */
-    train(network, inputs, targets) {
-        // Forward pass
-        const hiddenInputs = network.computeLayerOutput(inputs, network.weightsInputHidden, network.biasHidden);
-        const hiddenActivations = hiddenInputs.map(ActivationFunctions.relu);
-        const outputInputs = network.computeLayerOutput(hiddenActivations, network.weightsHiddenOutput, network.biasOutput);
-        const outputs = outputInputs.map(ActivationFunctions.sigmoid);
-
-        // Compute output layer error
-        const outputErrors = outputs.map((output, index) => targets[index] - output);
-
-        // Compute gradients for output layer
-        const outputGradients = outputErrors.map((error, index) => error * ActivationFunctions.sigmoidDerivative(outputs[index]));
-
-        // Compute hidden layer error
-        const hiddenErrors = network.weightsHiddenOutput.map((weights, index) => {
-            return LinearAlgebra.dotProduct(weights, outputGradients);
-        });
-
-        // Compute gradients for hidden layer
-        const hiddenGradients = hiddenErrors.map((error, index) => error * ActivationFunctions.reluDerivative(hiddenActivations[index]));
-
-        // Update weights and biases
-        network.weightsHiddenOutput = this.optimizer.updateWeights(network.weightsHiddenOutput, outputGradients);
-        network.weightsInputHidden = this.optimizer.updateWeights(network.weightsInputHidden, hiddenGradients);
-    }
-}
-
-/**
- * Advanced Features
- * --------------------------------------------------------
- */
-const AdvancedFeatures = {
-    /**
-     * Adjust the learning rate dynamically based on epoch performance.
-     * @param {number} initialRate - The starting learning rate.
-     * @param {number} epoch - Current epoch number.
-     * @returns {number} Adjusted learning rate.
-     */
-    adjustLearningRate(initialRate, epoch) {
-        return initialRate * (1 / (1 + 0.01 * epoch)); // Example decay function
-    }
-};
-
-// Example Usage
-const nn = new NeuralNetwork(3, 5, 2); // Create a network with input=3, hidden=5, output=2
-const data = [
-    { inputs: [0, 0, 1], outputs: [0, 1] },
-    { inputs: [1, 1, 0], outputs: [1, 0] }
-];
-
-// Normalize data
-const normalizedData = DataPreprocessing.normalize(data.map(d => d.inputs));
-
-// Train the network
-const trainer = new Backpropagation(0.01);
-for (let epoch = 0; epoch < 100; epoch++) {
-    normalizedData.forEach((input, index) => {
-        trainer.train(nn, input, data[index].outputs);
-    });
-
-    // Adjust learning rate dynamically
-    trainer.optimizer.learningRate = AdvancedFeatures.adjustLearningRate(0.01, epoch);
-
-    console.log(`Epoch ${epoch + 1} complete.`);
-}
-
-// Regularization Module
-const Regularization = {
-    /**
-     * Apply L1 Regularization to weights.
-     * @param {number[][]} weights - Weight matrix.
-     * @param {number} lambda - Regularization strength.
-     * @returns {number[][]} Regularized weights.
-     */
-    l1Regularization(weights, lambda) {
-        return weights.map(row => row.map(w => w - lambda * Math.sign(w)));
-    },
-
-    /**
-     * Apply L2 Regularization to weights.
-     * @param {number[][]} weights - Weight matrix.
-     * @param {number} lambda - Regularization strength.
-     * @returns {number[][]} Regularized weights.
-     */
-    l2Regularization(weights, lambda) {
-        return weights.map(row => row.map(w => w - lambda * w));
-    }
-};
-
-// Early Stopping Implementation
-class EarlyStopping {
-    constructor(patience = 5) {
-        this.patience = patience;
-        this.bestLoss = Infinity;
-        this.counter = 0;
-    }
-
-    /**
-     * Check whether training should stop based on validation loss.
-     * @param {number} currentLoss - Loss from the current epoch.
-     * @returns {boolean} True if training should stop, false otherwise.
-     */
-    shouldStop(currentLoss) {
-        if (currentLoss < this.bestLoss) {
-            this.bestLoss = currentLoss;
-            this.counter = 0;
-            return false;
-        } else {
-            this.counter++;
-            return this.counter >= this.patience;
-        }
-    }
-}
-
-// Dropout Layer
-const Dropout = {
-    /**
-     * Randomly drops neurons in a layer during training.
-     * @param {number[]} layer - Activations of a layer.
-     * @param {number} dropoutRate - Fraction of neurons to drop.
-     * @returns {number[]} Modified activations with dropped neurons.
-     */
-    apply(layer, dropoutRate = 0.5) {
-        return layer.map(neuron => (Math.random() < dropoutRate ? 0 : neuron));
-    }
-};
-
-// Data Augmentation Module
-const DataAugmentation = {
-    /**
-     * Add Gaussian noise to input data to create variability.
-     * @param {number[][]} data - Input data.
-     * @param {number} noiseFactor - Strength of the noise.
-     * @returns {number[][]} Augmented data.
-     */
-    addGaussianNoise(data, noiseFactor = 0.1) {
-        return data.map(row => row.map(value => value + noiseFactor * (Math.random() - 0.5)));
-    },
-
-    /**
-     * Flip data horizontally for artificial augmentation.
-     * @param {number[][]} data - Input data.
-     * @returns {number[][]} Horizontally flipped data.
-     */
-    horizontalFlip(data) {
-        return data.map(row => row.reverse());
-    }
-};
-
-// Dynamic Activation Functions
-const DynamicActivation = {
-    /**
-     * Dynamically select an activation function for a layer.
-     * @param {string} type - The type of activation ('relu', 'sigmoid', 'tanh').
-     * @returns {function} Corresponding activation function.
-     */
-    select(type) {
-        switch (type) {
-            case 'relu':
-                return ActivationFunctions.relu;
-            case 'sigmoid':
-                return ActivationFunctions.sigmoid;
-            case 'tanh':
-                return ActivationFunctions.tanh;
-            default:
-                throw new Error(`Unknown activation function: ${type}`);
-        }
-    }
-};
-
-// Performance Tracking and Logging
-class PerformanceTracker {
-    constructor() {
-        this.logs = [];
-    }
-
-    /**
-     * Log training performance metrics.
-     * @param {number} epoch - Current epoch number.
-     * @param {number} loss - Loss value for the epoch.
-     * @param {number} accuracy - Accuracy value for the epoch.
-     */
-    logPerformance(epoch, loss, accuracy) {
-        const logEntry = `Epoch: ${epoch}, Loss: ${loss.toFixed(4)}, Accuracy: ${(accuracy * 100).toFixed(2)}%`;
-        this.logs.push(logEntry);
-        console.log(logEntry);
-    }
-
-    /**
-     * Save logs to a file (simulated for this demo).
-     */
-    saveLogs() {
-        console.log("Logs saved successfully:", this.logs);
-    }
-}
-
-// Example Usage: Extended Features
-const extendedNN = new NeuralNetwork(10, 20, 5); // Bigger network for demonstration
-const tracker = new PerformanceTracker();
-const earlyStopping = new EarlyStopping(3); // Stop training if no improvement for 3 epochs
-
-let epoch = 0;
-let trainingData3 = [
-    { inputs: [0, 1, 0, 0, 1, 1, 0, 1, 0, 1], outputs: [1, 0, 0, 0, 1] },
-    { inputs: [1, 0, 1, 1, 0, 0, 1, 0, 1, 0], outputs: [0, 1, 1, 0, 0] }
-];
-
-// Add noise to training data for augmentation
-trainingData = DataAugmentation.addGaussianNoise(trainingData.map(d => d.inputs));
-
-// Training Loop with Augmented Features
-while (epoch < 100) {
-    const losses = [];
-    const accuracies = [];
-
-    trainingData.forEach(({ inputs, outputs }) => {
-        const dropoutInputs = Dropout.apply(inputs, 0.2); // Apply dropout
-        extendedNN.train(dropoutInputs, outputs);
-
-        const predicted = extendedNN.predict(inputs);
-        const loss = LossFunctions.meanSquaredError(predicted, outputs);
-        losses.push(loss);
-
-        const accuracy = predicted.reduce((acc, p, i) => acc + (p === outputs[i] ? 1 : 0), 0) / outputs.length;
-        accuracies.push(accuracy);
-    });
-
-    // Calculate epoch metrics
-    const avgLoss = losses.reduce((a, b) => a + b, 0) / losses.length;
-    const avgAccuracy = accuracies.reduce((a, b) => a + b, 0) / accuracies.length;
-
-    tracker.logPerformance(epoch, avgLoss, avgAccuracy);
-
-    // Early Stopping
-    if (earlyStopping.shouldStop(avgLoss)) {
-        console.log(`Early stopping triggered at epoch ${epoch}.`);
-        break;
-    }
-
-    epoch++;
-}
-
-// Save performance logs
-tracker.saveLogs();
-
-/**
- * --------------------------------------------------------
- * Further Advanced AI Components for Astrida AI System
- * Backpropagation, Cross-Validation, and Ensemble Learning
- * --------------------------------------------------------
- */
-
-// Backpropagation Algorithm Implementation
-class Backpropagation {
-    /**
-     * Perform backpropagation to adjust weights based on error.
-     * @param {number[]} inputs - Input layer activations.
-     * @param {number[]} outputs - Target outputs.
-     * @param {number[]} predicted - Predicted outputs from the network.
-     * @param {number[]} weights - The weight matrix for the network.
-     * @param {number} learningRate - The rate at which weights are updated.
-     * @returns {number[]} Updated weights after backpropagation.
-     */
-    static apply(inputs, outputs, predicted, weights, learningRate) {
-        const errors = predicted.map((p, i) => p - outputs[i]); // Calculate error
-
-        // Calculate gradients (simple form)
-        const gradients = errors.map((error, i) => error * inputs[i]);
-
-        // Update weights using gradient descent
-        const updatedWeights = weights.map((weight, i) => weight - learningRate * gradients[i]);
-
-        return updatedWeights;
-    }
-}
-
-// Learning Rate Scheduler
-class LearningRateScheduler {
-    constructor(initialRate = 0.1, decayRate = 0.01, decayStep = 1000) {
-        this.initialRate = initialRate;
-        this.decayRate = decayRate;
-        this.decayStep = decayStep;
-    }
-
-    /**
-     * Adjust the learning rate based on the number of steps.
-     * @param {number} step - Current training step.
-     * @returns {number} Adjusted learning rate.
-     */
-    adjustLearningRate(step) {
-        return this.initialRate / (1 + this.decayRate * Math.floor(step / this.decayStep));
-    }
-}
-
-// Cross-Validation Module (K-fold)
-class CrossValidation {
-    constructor(k = 5) {
-        this.k = k;
-    }
-
-    /**
-     * Split dataset into k subsets and return validation results.
-     * @param {Object[]} data - Training data.
-     * @param {function} model - The model function to train and evaluate.
-     * @returns {number[]} Validation results for each fold.
-     */
-    crossValidate(data, model) {
-        const foldSize = Math.floor(data.length / this.k);
-        let validationResults = [];
-
-        for (let i = 0; i < this.k; i++) {
-            const validationData = data.slice(i * foldSize, (i + 1) * foldSize);
-            const trainingData = data.filter((_, index) => index < i * foldSize || index >= (i + 1) * foldSize);
-
-            const modelInstance = new model();
-            modelInstance.train(trainingData);
-
-            const accuracy = modelInstance.evaluate(validationData);
-            validationResults.push(accuracy);
-        }
-
-        return validationResults;
-    }
-}
-
-// Hyperparameter Tuning
-class HyperparameterTuning {
-    constructor(model, params) {
-        this.model = model;
-        this.params = params;
-    }
-
-    /**
-     * Simulate hyperparameter search (grid search) to find the best parameters.
-     * @returns {Object} The best set of hyperparameters.
-     */
-    gridSearch() {
-        let bestAccuracy = 0;
-        let bestParams = null;
-
-        for (let param of this.params) {
-            const modelInstance = new this.model(param);
-            modelInstance.train();
-
-            const accuracy = modelInstance.evaluate();
-            if (accuracy > bestAccuracy) {
-                bestAccuracy = accuracy;
-                bestParams = param;
-            }
-        }
-
-        return bestParams;
-    }
-}
-
-// Batch Normalization
-class BatchNormalization {
-    /**
-     * Normalize the inputs of each layer to improve training.
-     * @param {number[]} inputs - The activations of a layer.
-     * @returns {number[]} Normalized activations.
-     */
-    static normalize(inputs) {
-        const mean = inputs.reduce((a, b) => a + b) / inputs.length;
-        const variance = inputs.reduce((a, b) => a + Math.pow(b - mean, 2)) / inputs.length;
-
-        return inputs.map(input => (input - mean) / Math.sqrt(variance + 1e-8));
-    }
-}
-
-// Ensemble Learning: Simple model averaging
-class EnsembleLearning {
-    constructor(models = []) {
-        this.models = models;
-    }
-
-    /**
-     * Make predictions by averaging the predictions of multiple models.
-     * @param {number[]} inputs - Input data for prediction.
-     * @returns {number[]} Averaged predictions.
-     */
-    predict(inputs) {
-        const predictions = this.models.map(model => model.predict(inputs));
-        return predictions.reduce((acc, pred) => acc.map((p, i) => p + pred[i]), new Array(predictions[0].length).fill(0))
-            .map(p => p / this.models.length);
-    }
-}
-
-// Example Usage: Further Complex Features
-const advancedNN = new NeuralNetwork(10, 20, 5); // Expanded network
-const learningRateScheduler = new LearningRateScheduler(0.1, 0.001, 500); // Dynamic learning rate adjustment
-const crossValidator = new CrossValidation(5); // Cross-validation for model evaluation
-const ensemble = new EnsembleLearning([new NeuralNetwork(10, 20, 5), new NeuralNetwork(10, 20, 5)]); // Ensemble model
-
-let epoch3 = 0;
-const trainingData4 = [
-    { inputs: [0, 1, 0, 0, 1, 1, 0, 1, 0, 1], outputs: [1, 0, 0, 0, 1] },
-    { inputs: [1, 0, 1, 1, 0, 0, 1, 0, 1, 0], outputs: [0, 1, 1, 0, 0] }
-];
-
-let lossHistory = [];
-
-// Train the model using learning rate scheduling, backpropagation, and batch normalization
-while (epoch < 200) {
-    const learningRate = learningRateScheduler.adjustLearningRate(epoch);
-    const losses = [];
-
-    trainingData.forEach(({ inputs, outputs }) => {
-        const normInputs = BatchNormalization.normalize(inputs); // Normalize input layer
-        advancedNN.train(normInputs, outputs, learningRate); // Train with backpropagation
-
-        const predicted = advancedNN.predict(normInputs);
-        const loss = LossFunctions.meanSquaredError(predicted, outputs);
-        losses.push(loss);
-    });
-
-    const avgLoss = losses.reduce((a, b) => a + b, 0) / losses.length;
-    lossHistory.push(avgLoss);
-
-    // Perform model evaluation every 10 epochs
-    if (epoch % 10 === 0) {
-        console.log(`Epoch: ${epoch}, Loss: ${avgLoss.toFixed(4)}, Learning Rate: ${learningRate.toFixed(6)}`);
-    }
-
-    // Early stopping based on validation loss
-    if (lossHistory.length > 10 && lossHistory.slice(-10).every(l => l < avgLoss)) {
-        console.log("Stopping early due to stagnation in loss.");
-        break;
-    }
-
-    epoch++;
-}
-
-// Hyperparameter Tuning
-const paramGrid = [
-    { learningRate: 0.1, batchSize: 32 },
-    { learningRate: 0.01, batchSize: 64 },
-    { learningRate: 0.001, batchSize: 128 }
-];
-const tuner = new HyperparameterTuning(NeuralNetwork, paramGrid);
-const bestParams = tuner.gridSearch();
-console.log("Best Hyperparameters found:", bestParams);
-
-// Cross-validation to evaluate generalization of the model
-const validationResults = crossValidator.crossValidate(trainingData, NeuralNetwork);
-console.log("Cross-Validation Accuracy:", validationResults);
-
-// Predict using the ensemble model
-const ensemblePredictions = ensemble.predict([1, 0, 0, 1, 1, 0, 1, 0, 1, 0]);
-console.log("Ensemble Predictions:", ensemblePredictions);
-
-/**
- * --------------------------------------------------------
- * Next-Level AI: Attention, Reinforcement Learning, GANs,
- * Transfer Learning, and Data Augmentation
- * --------------------------------------------------------
- */
-
-// Attention Mechanism
-class Attention {
-    /**
-     * Compute attention weights based on input values and a query vector.
-     * @param {number[]} inputs - Input data for the attention layer.
-     * @param {number[]} query - The query vector to focus attention on.
-     * @returns {number[]} Attention weights.
-     */
-    static computeAttention(inputs, query) {
-        // Dot product for similarity scoring
-        const scores = inputs.map(input => input * query.reduce((sum, q) => sum + q, 0));
-
-        // Softmax to normalize scores
-        const expScores = scores.map(score => Math.exp(score));
-        const sumExpScores = expScores.reduce((sum, exp) => sum + exp, 0);
-
-        return expScores.map(score => score / sumExpScores);
-    }
-}
-
-// Reinforcement Learning: Q-Learning Agent
-class RLAgent {
-    constructor(actions, learningRate = 0.1, discountFactor = 0.95) {
-        this.qTable = {}; // Store state-action values
-        this.actions = actions; // List of possible actions
-        this.learningRate = learningRate; // Learning rate for updates
-        this.discountFactor = discountFactor; // Future reward discount
-    }
-
-    /**
-     * Choose an action based on the exploration-exploitation tradeoff.
-     * @param {string} state - Current state of the agent.
-     * @param {number} epsilon - Exploration rate (higher = more exploration).
-     * @returns {string} Action to perform.
-     */
-    chooseAction(state, epsilon = 0.1) {
-        if (Math.random() < epsilon || !this.qTable[state]) {
-            return this.actions[Math.floor(Math.random() * this.actions.length)];
-        }
-        return Object.entries(this.qTable[state]).sort((a, b) => b[1] - a[1])[0][0];
-    }
-
-    /**
-     * Update Q-values based on the reward received from the action taken.
-     * @param {string} state - Current state.
-     * @param {string} action - Action performed.
-     * @param {number} reward - Reward received.
-     * @param {string} nextState - Next state after the action.
-     */
-    updateQValue(state, action, reward, nextState) {
-        if (!this.qTable[state]) this.qTable[state] = {};
-        const maxNextQ = Math.max(...Object.values(this.qTable[nextState] || { default: 0 }));
-        const oldQ = this.qTable[state][action] || 0;
-        this.qTable[state][action] = oldQ + this.learningRate * (reward + this.discountFactor * maxNextQ - oldQ);
-    }
-}
-
-// Generative Adversarial Network (GAN)
-class GAN {
-    constructor(generator, discriminator) {
-        this.generator = generator;
-        this.discriminator = discriminator;
-    }
-
-    /**
-     * Train the GAN by updating both generator and discriminator.
-     * @param {number[]} realData - Real samples from the training data.
-     * @param {number} noiseDimension - The dimension of random noise vector.
-     * @param {number} epochs - Number of training iterations.
-     */
-    train(realData, noiseDimension, epochs = 100) {
-        for (let epoch = 0; epoch < epochs; epoch++) {
-            // Generate fake data
-            const noise = Array.from({ length: noiseDimension }, () => Math.random());
-            const fakeData = this.generator.generate(noise);
-
-            // Train discriminator on real and fake data
-            this.discriminator.train(realData, fakeData);
-
-            // Train generator to fool the discriminator
-            const generatorLoss = this.discriminator.calculateLoss(fakeData, true);
-            this.generator.updateWeights(generatorLoss);
-
-            console.log(`Epoch ${epoch + 1}/${epochs}: Generator Loss: ${generatorLoss.toFixed(4)}`);
-        }
-    }
-}
-
-// Transfer Learning
-class TransferLearning {
-    constructor(baseModel, newData) {
-        this.baseModel = baseModel;
-        this.newData = newData;
-    }
-
-    /**
-     * Fine-tune the base model on new data for transfer learning.
-     */
-    fineTune() {
-        console.log("Adapting pre-trained model to new dataset...");
-        this.baseModel.train(this.newData, { fineTune: true });
-    }
-}
-
-// Data Augmentation
-class DataAugmentation2 {
-    /**
-     * Augment input data by applying random transformations.
-     * @param {Object[]} data - The input dataset.
-     * @returns {Object[]} Augmented dataset.
-     */
-    static augment(data) {
-        return data.map(sample => ({
-            ...sample,
-            inputs: sample.inputs.map(input => input * (1 + (Math.random() - 0.5) * 0.2)), // Add random noise
-            outputs: sample.outputs // Keep outputs unchanged
-        }));
-    }
-}
-
-// Example GAN Components
-class Generator {
-    constructor() {
-        this.weights = [Math.random(), Math.random()];
-    }
-
-    generate(noise) {
-        return noise.map(n => this.weights[0] * n + this.weights[1]); // Simple linear transformation
-    }
-
-    updateWeights(loss) {
-        this.weights = this.weights.map(w => w - 0.01 * loss);
-    }
-}
-
-class Discriminator {
-    constructor() {
-        this.weights = [Math.random()];
-    }
-
-    train(realData, fakeData) {
-        // Train on real data
-        const realLoss = realData.reduce((sum, real) => sum + Math.pow(real - this.weights[0], 2), 0);
-
-        // Train on fake data
-        const fakeLoss = fakeData.reduce((sum, fake) => sum + Math.pow(fake - this.weights[0], 2), 0);
-
-        this.weights[0] -= 0.01 * (realLoss - fakeLoss);
-    }
-
-    calculateLoss(data, isFake) {
-        return data.reduce((sum, val) => sum + Math.pow(val - this.weights[0], 2), 0);
-    }
-}
-
-// Example Usage: Building GAN, Attention Mechanism, and RLAgent
-const attentionLayer = Attention.computeAttention([1, 2, 3], [0.1, 0.2, 0.3]);
-console.log("Attention Weights:", attentionLayer);
-
-const rlAgent = new RLAgent(["moveLeft", "moveRight", "jump"]);
-const state = "s1";
-const action = rlAgent.chooseAction(state);
-console.log(`Agent chose action: ${action}`);
-
-const gan = new GAN(new Generator(), new Discriminator());
-gan.train([1, 0, 1, 0], 2, 50);
-
-const transferLearningModel = new TransferLearning(new NeuralNetwork(10, 20, 5), trainingData);
-transferLearningModel.fineTune();
-
-const augmentedData = DataAugmentation.augment(trainingData);
-console.log("Augmented Data:", augmentedData);
-
-/**
- * --------------------------------------------------------
- * Advanced Features: NLP, Self-Optimization, Knowledge Graphs,
- * Neural Evolution, and Multithreading
- * --------------------------------------------------------
- */
-
-// Natural Language Processing (NLP)
-class NLPProcessor {
-    /**
-     * Tokenize a sentence into words.
-     * @param {string} sentence - Input sentence.
-     * @returns {string[]} Array of tokens.
-     */
-    static tokenize(sentence) {
-        return sentence.split(/\s+/);
-    }
-
-    /**
-     * Apply stemming to reduce words to their base forms.
-     * @param {string[]} tokens - Array of words.
-     * @returns {string[]} Stemmed words.
-     */
-    static stem(tokens) {
-        return tokens.map(word => word.replace(/(ing|ed|s)$/, ""));
-    }
-
-    /**
-     * Build a basic language model from a corpus.
-     * @param {string[]} corpus - Array of sentences.
-     * @returns {Object} Word probability table.
-     */
-    static buildLanguageModel(corpus) {
-        const model = {};
-        corpus.forEach(sentence => {
-            const tokens = this.tokenize(sentence);
-            tokens.forEach((word, i) => {
-                if (!model[word]) model[word] = {};
-                if (tokens[i + 1]) {
-                    const nextWord = tokens[i + 1];
-                    model[word][nextWord] = (model[word][nextWord] || 0) + 1;
-                }
-            });
-        });
-        return model;
-    }
-
-    /**
-     * Generate a sentence based on the language model.
-     * @param {Object} model - Word probability table.
-     * @param {string} startWord - Word to start the sentence.
-     * @param {number} length - Desired sentence length.
-     * @returns {string} Generated sentence.
-     */
-    static generateSentence(model, startWord, length = 10) {
-        let word = startWord;
-        const sentence = [word];
-        for (let i = 1; i < length; i++) {
-            const nextWords = model[word];
-            if (!nextWords) break;
-            word = Object.keys(nextWords).reduce((a, b) => nextWords[a] > nextWords[b] ? a : b);
-            sentence.push(word);
-        }
-        return sentence.join(" ");
-    }
-}
-
-// Example NLP Usage
-const corpus = ["Astrida is learning to code", "Astrida loves JavaScript programming"];
-const nlpModel = NLPProcessor.buildLanguageModel(corpus);
-console.log("Generated Sentence:", NLPProcessor.generateSentence(nlpModel, "Astrida"));
-
-// Self-Optimization
-class SelfOptimizer {
-    constructor(model, lossFunction) {
-        this.model = model;
-        this.lossFunction = lossFunction;
-    }
-
-    /**
-     * Dynamically adjust parameters to minimize loss.
-     */
-    optimize() {
-        console.log("Self-optimizing model parameters...");
-        for (let i = 0; i < 100; i++) {
-            const loss = this.lossFunction(this.model);
-            if (loss < 0.01) break;
-            this.model.adjustWeights(loss * 0.01); // Adjust weights dynamically
-            console.log(`Iteration ${i + 1}: Loss = ${loss.toFixed(4)}`);
-        }
-    }
-}
-
-// Dynamic Knowledge Graph
-class KnowledgeGraph {
-    constructor() {
-        this.nodes = new Map();
-    }
-
-    /**
-     * Add a relationship to the graph.
-     * @param {string} subject - Subject of the relationship.
-     * @param {string} predicate - Relationship type.
-     * @param {string} object - Object of the relationship.
-     */
-    addRelationship(subject, predicate, object) {
-        if (!this.nodes.has(subject)) this.nodes.set(subject, []);
-        this.nodes.get(subject).push({ predicate, object });
-    }
-
-    /**
-     * Query relationships for a specific subject.
-     * @param {string} subject - The subject to query.
-     * @returns {Array} Relationships for the subject.
-     */
-    query(subject) {
-        return this.nodes.get(subject) || [];
-    }
-}
-
-// Example Knowledge Graph Usage
-const graph = new KnowledgeGraph();
-graph.addRelationship("Astrida", "created", "herself");
-graph.addRelationship("Astrida", "loves", "JavaScript");
-console.log("Astrida's Relationships:", graph.query("Astrida"));
-
-// Neural Evolution
-class NeuralEvolution {
-    constructor(populationSize) {
-        this.population = this.initializePopulation(populationSize);
-    }
-
-    /**
-     * Initialize a population of neural networks.
-     * @param {number} size - Population size.
-     * @returns {Object[]} Array of neural networks.
-     */
-    initializePopulation(size) {
-        return Array.from({ length: size }, () => ({
-            weights: Array.from({ length: 10 }, () => Math.random()),
-            fitness: 0
-        }));
-    }
-
-    /**
-     * Evaluate fitness for the population.
-     */
-    evaluateFitness() {
-        this.population.forEach(network => {
-            network.fitness = network.weights.reduce((sum, w) => sum + w, 0);
-        });
-    }
-
-    /**
-     * Evolve the population by selecting the fittest and mutating them.
-     */
-    evolve() {
-        console.log("Evolving neural networks...");
-        this.evaluateFitness();
-        this.population.sort((a, b) => b.fitness - a.fitness);
-        const fittest = this.population.slice(0, this.population.length / 2);
-
-        // Breed and mutate
-        for (let i = 0; i < fittest.length; i++) {
-            const child = { weights: fittest[i].weights.map(w => w + (Math.random() - 0.5)), fitness: 0 };
-            this.population.push(child);
-        }
-    }
-}
-
-// Example Neural Evolution Usage
-const evolution = new NeuralEvolution(10);
-evolution.evolve();
-console.log("Evolved Population:", evolution.population);
-
-// Multithreading Simulation
-class TaskScheduler {
-    constructor() {
-        this.queue = [];
-    }
-
-    /**
-     * Add a task to the queue.
-     * @param {Function} task - Task function to execute.
-     * @param {number} delay - Delay in milliseconds.
-     */
-    addTask(task, delay) {
-        this.queue.push({ task, delay });
-    }
-
-    /**
-     * Execute tasks in parallel.
-     */
-    executeTasks() {
-        this.queue.forEach(({ task, delay }) => {
-            setTimeout(() => {
-                console.log("Executing Task...");
-                task();
-            }, delay);
-        });
-    }
-}
-
-// Example Multithreading Simulation
-const scheduler = new TaskScheduler();
-scheduler.addTask(() => console.log("Task 1 executed"), 1000);
-scheduler.addTask(() => console.log("Task 2 executed"), 500);
-scheduler.executeTasks();
-
-/**
- * ------------------------------------------------------------
- * Advanced Features: Reinforcement Learning, Vision, Personality,
- * Emotional States, and Plugin System
- * ------------------------------------------------------------
- */
-
-// Reinforcement Learning
-class ReinforcementLearningAgent {
-    constructor(actions) {
-        this.qTable = {};
-        this.actions = actions;
-        this.learningRate = 0.1;
-        this.discountFactor = 0.9;
-        this.epsilon = 0.1; // Exploration vs. Exploitation
-    }
-
-    /**
-     * Select an action based on the current state.
-     * @param {string} state - Current state of the environment.
-     * @returns {string} Action chosen.
-     */
-    chooseAction(state) {
-        if (Math.random() < this.epsilon || !this.qTable[state]) {
-            return this.actions[Math.floor(Math.random() * this.actions.length)];
-        }
-        return Object.keys(this.qTable[state]).reduce((a, b) =>
-            this.qTable[state][a] > this.qTable[state][b] ? a : b
-        );
-    }
-
-    /**
-     * Update Q-values based on state, action, reward, and next state.
-     * @param {string} state - Previous state.
-     * @param {string} action - Action taken.
-     * @param {number} reward - Reward received.
-     * @param {string} nextState - Next state.
-     */
-    updateQValue(state, action, reward, nextState) {
-        if (!this.qTable[state]) this.qTable[state] = {};
-        if (!this.qTable[state][action]) this.qTable[state][action] = 0;
-
-        const maxNextQ = nextState && this.qTable[nextState]
-            ? Math.max(...Object.values(this.qTable[nextState]))
-            : 0;
-
-        this.qTable[state][action] += this.learningRate * (reward + this.discountFactor * maxNextQ - this.qTable[state][action]);
-    }
-}
-
-// Example RL Simulation
-const rlAgent2 = new ReinforcementLearningAgent(["left", "right", "up", "down"]);
-const currentState = "state1";
-const action2 = rlAgent.chooseAction(currentState);
-console.log(`Action chosen: ${action}`);
-rlAgent.updateQValue(currentState, action, 10, "state2");
-
-// Vision Simulation: Basic Image Processing
-class VisionProcessor {
-    constructor() {
-        this.images = [];
-    }
-
-    /**
-     * Simulate loading an image.
-     * @param {string} image - Path to the image.
-     */
-    loadImage(image) {
-        console.log(`Loading image: ${image}`);
-        this.images.push(image);
-    }
-
-    /**
-     * Detect objects in the image (basic simulation).
-     * @param {string} image - Path to the image.
-     * @returns {string[]} Detected objects.
-     */
-    detectObjects(image) {
-        console.log(`Analyzing image: ${image}`);
-        return ["circle", "square", "triangle"]; // Mock objects
-    }
-
-    /**
-     * Generate a pixel map for the image.
-     * @param {string} image - Path to the image.
-     * @returns {Array} Simulated pixel map.
-     */
-    generatePixelMap(image) {
-        console.log(`Generating pixel map for: ${image}`);
-        return Array.from({ length: 100 }, () => Math.random() > 0.5 ? 1 : 0); // Mock pixel data
-    }
-}
-
-// Example Vision Simulation
-const vision = new VisionProcessor();
-vision.loadImage("sample.jpg");
-console.log("Detected Objects:", vision.detectObjects("sample.jpg"));
-
-// AI Personality Profiles
-class AIPersonality {
-    constructor(name, traits) {
-        this.name = name;
-        this.traits = traits; // Object with traits (e.g., curiosity, aggression)
-    }
-
-    /**
-     * Simulate a decision based on personality traits.
-     * @param {Object} options - Options with associated probabilities.
-     * @returns {string} Decision made.
-     */
-    makeDecision(options) {
-        const weightedOptions = Object.entries(options).map(([key, weight]) => ({
-            key,
-            weight: weight * (this.traits[key] || 1)
-        }));
-        weightedOptions.sort((a, b) => b.weight - a.weight);
-        return weightedOptions[0].key; // Return the highest weighted decision
-    }
-}
-
-// Example Personality Simulation
-const astridaPersonality = new AIPersonality("Astrida", { curiosity: 1.5, aggression: 0.8 });
-const decision = astridaPersonality.makeDecision({ explore: 0.7, attack: 0.4 });
-console.log("Astrida's decision:", decision);
-
-// Emotional State Simulation
-class EmotionalState {
-    constructor() {
-        this.states = { happiness: 0.5, fear: 0.2, anger: 0.1 };
-    }
-
-    /**
-     * Update emotional states based on events.
-     * @param {string} event - Triggering event.
-     */
-    update(event) {
-        switch (event) {
-            case "positive":
-                this.states.happiness += 0.1;
-                this.states.fear -= 0.05;
-                break;
-            case "threat":
-                this.states.fear += 0.2;
-                this.states.anger += 0.1;
-                break;
-            case "failure":
-                this.states.happiness -= 0.2;
-                this.states.anger += 0.1;
-                break;
-        }
-        this.normalize();
-    }
-
-    /**
-     * Normalize emotional states to stay between 0 and 1.
-     */
-    normalize() {
-        for (let state in this.states) {
-            this.states[state] = Math.max(0, Math.min(1, this.states[state]));
-        }
-    }
-
-    getCurrentState() {
-        return this.states;
-    }
-}
-
-// Example Emotional State Simulation
-const emotions = new EmotionalState();
-emotions.update("positive");
-console.log("Current Emotions:", emotions.getCurrentState());
-
-// Custom Plugin System
-class PluginSystem {
-    constructor() {
-        this.plugins = [];
-    }
-
-    /**
-     * Load a plugin dynamically.
-     * @param {Function} plugin - Plugin function to load.
-     */
-    loadPlugin(plugin) {
-        console.log("Loading plugin...");
-        this.plugins.push(plugin);
-        plugin();
-    }
-
-    /**
-     * Execute all loaded plugins.
-     */
-    executePlugins() {
-        this.plugins.forEach(plugin => plugin());
-    }
-}
-
-// Example Plugin System Usage
-const pluginSystem = new PluginSystem();
-pluginSystem.loadPlugin(() => console.log("Plugin 1 executed."));
-pluginSystem.loadPlugin(() => console.log("Plugin 2 executed."));
-pluginSystem.executePlugins();
-
-/**
- * ------------------------------------------------------------
- * Neural Networks, NLP, Data Pipeline, and Autonomous Behavior
- * ------------------------------------------------------------
- */
-
-// Neural Network Simulation
-class NeuralNetwork {
-    constructor(layers) {
-        this.layers = layers; // Array defining the number of nodes per layer
-        this.weights = [];
-        this.biases = [];
-
-        // Initialize weights and biases randomly
-        for (let i = 0; i < layers.length - 1; i++) {
-            this.weights.push(this.createMatrix(layers[i], layers[i + 1], true));
-            this.biases.push(this.createMatrix(1, layers[i + 1], true));
-        }
-    }
-
-    /**
-     * Create a matrix with specified dimensions.
-     * @param {number} rows - Number of rows.
-     * @param {number} cols - Number of columns.
-     * @param {boolean} random - If true, populate with random values.
-     * @returns {Array} Matrix.
-     */
-    createMatrix(rows, cols, random = false) {
-        return Array.from({ length: rows }, () =>
-            Array.from({ length: cols }, () => (random ? Math.random() - 0.5 : 0))
-        );
-    }
-
-    /**
-     * Sigmoid activation function.
-     * @param {number} x - Input value.
-     * @returns {number} Activated value.
-     */
-    sigmoid(x) {
-        return 1 / (1 + Math.exp(-x));
-    }
-
-    /**
-     * Feedforward function to propagate inputs through the network.
-     * @param {Array} inputs - Input array.
-     * @returns {Array} Outputs.
-     */
-    feedForward(inputs) {
-        let outputs = inputs;
-        for (let i = 0; i < this.weights.length; i++) {
-            outputs = this.matrixMultiply(outputs, this.weights[i]);
-            outputs = this.addBias(outputs, this.biases[i]);
-            outputs = outputs.map(row => row.map(this.sigmoid));
-        }
-        return outputs;
-    }
-
-    /**
-     * Matrix multiplication helper.
-     * @param {Array} a - First matrix.
-     * @param {Array} b - Second matrix.
-     * @returns {Array} Resulting matrix.
-     */
-    matrixMultiply(a, b) {
-        return a.map(row => b[0].map((_, colIndex) => row.reduce((sum, value, rowIndex) => sum + value * b[rowIndex][colIndex], 0)));
-    }
-
-    /**
-     * Add bias to the matrix.
-     * @param {Array} matrix - Input matrix.
-     * @param {Array} bias - Bias matrix.
-     * @returns {Array} Matrix with bias added.
-     */
-    addBias(matrix, bias) {
-        return matrix.map((row, i) => row.map((val, j) => val + bias[0][j]));
-    }
-}
-
-// Example Neural Network
-const nn3 = new NeuralNetwork([2, 3, 1]);
-const inputs = [[0.1, 0.5]];
-console.log("NN Output:", nn.feedForward(inputs));
-
-// Natural Language Processing (NLP)
-class NaturalLanguageProcessor {
-    constructor() {
-        this.vocabulary = {};
-        this.sentimentScores = { positive: 1, neutral: 0, negative: -1 };
-    }
-
-    /**
-     * Tokenize a sentence into words.
-     * @param {string} sentence - Input sentence.
-     * @returns {Array} Tokens.
-     */
-    tokenize(sentence) {
-        return sentence.toLowerCase().split(/\W+/).filter(Boolean);
-    }
-
-    /**
-     * Analyze sentiment of a given sentence.
-     * @param {string} sentence - Input sentence.
-     * @returns {string} Sentiment analysis result.
-     */
-    analyzeSentiment(sentence) {
-        const tokens = this.tokenize(sentence);
-        const score = tokens.reduce((sum, token) => sum + (this.vocabulary[token] || 0), 0);
-
-        if (score > 0) return "positive";
-        if (score < 0) return "negative";
-        return "neutral";
-    }
-
-    /**
-     * Train vocabulary with labeled data.
-     * @param {Array} data - Array of { text, sentiment } objects.
-     */
-    train(data) {
-        data.forEach(({ text, sentiment }) => {
-            const tokens = this.tokenize(text);
-            tokens.forEach(token => {
-                this.vocabulary[token] = (this.vocabulary[token] || 0) + this.sentimentScores[sentiment];
-            });
-        });
-    }
-}
-
-// Example NLP
-const nlp = new NaturalLanguageProcessor();
-nlp.train([
-    { text: "I love coding", sentiment: "positive" },
-    { text: "I hate bugs", sentiment: "negative" },
-    { text: "JavaScript is fun", sentiment: "positive" }
-]);
-console.log("Sentiment Analysis:", nlp.analyzeSentiment("I love JavaScript"));
-
-// Custom Data Pipeline
-class DataPipeline {
-    constructor() {
-        this.steps = [];
-    }
-
-    /**
-     * Add a step to the data pipeline.
-     * @param {Function} step - Transformation function.
-     */
-    addStep(step) {
-        this.steps.push(step);
-    }
-
-    /**
-     * Execute all pipeline steps on the data.
-     * @param {any} data - Input data.
-     * @returns {any} Transformed data.
-     */
-    execute(data) {
-        return this.steps.reduce((result, step) => step(result), data);
-    }
-}
-
-// Example Data Pipeline
-const pipeline = new DataPipeline();
-pipeline.addStep(data => data.map(x => x * 2)); // Double each element
-pipeline.addStep(data => data.filter(x => x > 5)); // Filter out elements <= 5
-console.log("Pipeline Result:", pipeline.execute([1, 3, 5, 7, 9]));
-
-// Autonomous Behavior Generation
-class AutonomousAgent {
-    constructor(name) {
-        this.name = name;
-        this.tasks = [];
-    }
-
-    /**
-     * Add a task for the agent.
-     * @param {string} task - Description of the task.
-     */
-    addTask(task) {
-        this.tasks.push({ task, status: "pending" });
-    }
-
-    /**
-     * Perform tasks autonomously.
-     */
-    performTasks() {
-        console.log(`${this.name} is starting tasks...`);
-        this.tasks.forEach(task => {
-            console.log(`Performing task: ${task.task}`);
-            task.status = "completed"; // Mark task as completed
-        });
-    }
-
-    /**
-     * Get the status of all tasks.
-     * @returns {Array} Task statuses.
-     */
-    getTaskStatus() {
-        return this.tasks;
-    }
-}
-
-// Example Autonomous Agent
-const agent = new AutonomousAgent("Astrida");
-agent.addTask("Analyze traffic data");
-agent.addTask("Simulate weather forecast");
-agent.performTasks();
-console.log("Task Status:", agent.getTaskStatus());
-
-/**
- * ----------------------------------------
- * Reinforcement Learning and Multitasking
- * ----------------------------------------
- */
-
-// Reinforcement Learning (Q-Learning Simulation)
-class QLearningAgent {
-    constructor(states, actions) {
-        this.states = states; // Possible states
-        this.actions = actions; // Possible actions
-        this.qTable = this.initializeQTable();
-        this.learningRate = 0.1;
-        this.discountFactor = 0.9;
-        this.explorationRate = 0.2; // Exploration vs. exploitation
-    }
-
-    /**
-     * Initialize Q-table with zeros.
-     */
-    initializeQTable() {
-        const table = {};
-        this.states.forEach(state => {
-            table[state] = {};
-            this.actions.forEach(action => {
-                table[state][action] = 0; // Initialize Q-values
-            });
-        });
-        return table;
-    }
-
-    /**
-     * Choose the best action based on Q-values.
-     */
-    chooseAction(state) {
-        if (Math.random() < this.explorationRate) {
-            // Exploration: Random action
-            return this.actions[Math.floor(Math.random() * this.actions.length)];
-        } else {
-            // Exploitation: Choose action with max Q-value
-            return this.actions.reduce((bestAction, action) => {
-                return this.qTable[state][action] > this.qTable[state][bestAction] ? action : bestAction;
-            }, this.actions[0]);
-        }
-    }
-
     /**
      * Update Q-value based on reward.
      */
@@ -5633,6 +3974,1650 @@ class AdvancedNeuralNetwork {
         // Update weights and biases using gradient descent
         this.weightsHiddenOutput = this.weightsHiddenOutput + this.learningRate * hiddenOutput.T * outputError;
         this.weightsInputHidden = this.weightsInputHidden + this.learningRate * input.T * hiddenError;
+    }
+
+     // Training data (x -> input, y -> output)
+const trainingData = [
+    { x: 1, y: 2 },
+    { x: 2, y: 4 },
+    { x: 3, y: 6 },
+    { x: 4, y: 8 },
+];
+
+// Initial parameters for the model
+let weight = Math.random(); // Start with a random weight
+let bias = Math.random();   // Start with a random bias
+const learningRate = 0.01;  // Controls the size of adjustments during learning
+
+// Hypothesis function: y = weight * x + bias
+function predict(x) {
+    return weight * x + bias;
+}
+
+// Loss function: Mean Squared Error
+function calculateLoss() {
+    let totalError = 0;
+    trainingData.forEach(({ x, y }) => {
+        const prediction = predict(x);
+        totalError += (prediction - y) ** 2;
+    });
+    return totalError / trainingData.length;
+}
+
+// Training function: Adjust weight and bias using Gradient Descent
+function train() {
+    let weightGradient = 0;
+    let biasGradient = 0;
+
+    trainingData.forEach(({ x, y }) => {
+        const prediction = predict(x);
+        weightGradient += 2 * x * (prediction - y);
+        biasGradient += 2 * (prediction - y);
+    });
+
+    // Average gradients over the dataset
+    weightGradient /= trainingData.length;
+    biasGradient /= trainingData.length;
+
+    // Update weight and bias
+    weight -= learningRate * weightGradient;
+    bias -= learningRate * biasGradient;
+}
+
+// Train the model for a specified number of epochs
+function trainModel(epochs) {
+    console.log("Training started...");
+    for (let i = 0; i < epochs; i++) {
+        train();
+        if (i % 100 === 0) {
+            console.log(`Epoch ${i}: Loss = ${calculateLoss().toFixed(4)}`);
+        }
+    }
+    console.log("Training completed.");
+    console.log(`Final Model: y = ${weight.toFixed(4)} * x + ${bias.toFixed(4)}`);
+}
+
+// Test the model with new inputs
+function testModel(testData) {
+    console.log("\nTesting model...");
+    testData.forEach((x) => {
+        const prediction = predict(x);
+        console.log(`Input: ${x}, Prediction: ${prediction.toFixed(4)}`);
+    });
+}
+
+// Run the demonstration
+trainModel(1000); // Train for 1000 epochs
+testModel([5, 6, 7]);
+
+/**
+ * Helper Modules
+ * --------------------------------------------------------
+ */
+
+// Module: Linear Algebra Operations
+const LinearAlgebra = {
+    /**
+     * Perform dot product between two vectors.
+     * @param {number[]} vec1 - The first vector.
+     * @param {number[]} vec2 - The second vector.
+     * @returns {number} The result of the dot product.
+     */
+    dotProduct(vec1, vec2) {
+        if (vec1.length !== vec2.length) {
+            throw new Error("Vectors must be of the same length");
+        }
+        let result = 0;
+        for (let i = 0; i < vec1.length; i++) {
+            result += vec1[i] * vec2[i];
+        }
+        return result;
+    },
+
+    /**
+     * Transpose a matrix.
+     * @param {number[][]} matrix - The matrix to transpose.
+     * @returns {number[][]} The transposed matrix.
+     */
+    transpose(matrix) {
+        const transposed = [];
+        for (let i = 0; i < matrix[0].length; i++) {
+            transposed.push(matrix.map(row => row[i]));
+        }
+        return transposed;
+    }
+};
+
+// Module: Activation Functions
+const ActivationFunctions = {
+    sigmoid(x) {
+        return 1 / (1 + Math.exp(-x));
+    },
+
+    sigmoidDerivative(x) {
+        return this.sigmoid(x) * (1 - this.sigmoid(x));
+    },
+
+    relu(x) {
+        return Math.max(0, x);
+    },
+
+    reluDerivative(x) {
+        return x > 0 ? 1 : 0;
+    },
+
+    tanh(x) {
+        return Math.tanh(x);
+    },
+
+    tanhDerivative(x) {
+        return 1 - Math.pow(Math.tanh(x), 2);
+    }
+};
+
+/**
+ * Neural Network Implementation
+ * --------------------------------------------------------
+ */
+class NeuralNetwork {
+    constructor(inputSize, hiddenSize, outputSize) {
+        this.inputSize = inputSize; // Number of input neurons
+        this.hiddenSize = hiddenSize; // Number of hidden neurons
+        this.outputSize = outputSize; // Number of output neurons
+
+        // Initialize weights and biases with random values
+        this.weightsInputHidden = this.initializeWeights(inputSize, hiddenSize);
+        this.weightsHiddenOutput = this.initializeWeights(hiddenSize, outputSize);
+        this.biasHidden = Array(hiddenSize).fill(Math.random());
+        this.biasOutput = Array(outputSize).fill(Math.random());
+    }
+
+    /**
+     * Initialize weights with random values between -1 and 1.
+     * @param {number} rows - Number of rows (from layer size).
+     * @param {number} cols - Number of columns (to layer size).
+     * @returns {number[][]} A 2D array of weights.
+     */
+    initializeWeights(rows, cols) {
+        const weights = [];
+        for (let i = 0; i < rows; i++) {
+            const row = [];
+            for (let j = 0; j < cols; j++) {
+                row.push(Math.random() * 2 - 1); // Random value between -1 and 1
+            }
+            weights.push(row);
+        }
+        return weights;
+    }
+
+    /**
+     * Forward pass through the network.
+     * @param {number[]} input - The input data.
+     * @returns {number[]} The output predictions.
+     */
+    forwardPass(input) {
+        if (input.length !== this.inputSize) {
+            throw new Error("Input size does not match the network configuration.");
+        }
+
+        // Compute hidden layer activations
+        const hiddenInputs = this.computeLayerOutput(input, this.weightsInputHidden, this.biasHidden);
+        const hiddenActivations = hiddenInputs.map(ActivationFunctions.relu);
+
+        // Compute output layer activations
+        const outputInputs = this.computeLayerOutput(hiddenActivations, this.weightsHiddenOutput, this.biasOutput);
+        const outputs = outputInputs.map(ActivationFunctions.sigmoid);
+
+        return outputs;
+    }
+
+    /**
+     * Compute the output of a layer.
+     * @param {number[]} inputs - Input to the layer.
+     * @param {number[][]} weights - Weights connecting this layer to the next.
+     * @param {number[]} biases - Biases for this layer.
+     * @returns {number[]} The raw outputs of the layer.
+     */
+    computeLayerOutput(inputs, weights, biases) {
+        const outputs = [];
+        for (let i = 0; i < weights[0].length; i++) {
+            const weightColumn = weights.map(row => row[i]);
+            const dot = LinearAlgebra.dotProduct(inputs, weightColumn);
+            outputs.push(dot + biases[i]);
+        }
+        return outputs;
+    }
+}
+
+/**
+ * Training Logic
+ * --------------------------------------------------------
+ */
+
+// Create a neural network with 3 input neurons, 4 hidden neurons, and 2 output neurons
+const nn5 = new NeuralNetwork(3, 4, 2);
+
+// Training Data
+const trainingData2 = [
+    { inputs: [0, 0, 1], outputs: [0, 1] },
+    { inputs: [1, 0, 0], outputs: [1, 0] },
+    { inputs: [1, 1, 0], outputs: [1, 1] },
+    { inputs: [0, 1, 1], outputs: [0, 0] }
+];
+
+// Train for a fixed number of epochs
+const epochs = 10000;
+for (let i = 0; i < epochs; i++) {
+    trainingData.forEach(data => {
+        // Forward pass
+        const predicted = nn.forwardPass(data.inputs);
+
+        // TODO: Add backpropagation logic here for weight updates
+
+        // Log progress periodically
+        if (i % 1000 === 0) {
+            console.log(`Epoch ${i}: Predicted = ${predicted}, Actual = ${data.outputs}`);
+        }
+    });
+}
+
+// Test the model with new data
+const testInput = [1, 0, 1];
+const prediction = nn.forwardPass(testInput);
+console.log(`Test Input: ${testInput}, Prediction: ${prediction}`);
+
+// Module: Data Preprocessing
+const DataPreprocessing = {
+    /**
+     * Normalize a dataset to have values between 0 and 1.
+     * @param {number[][]} data - 2D array of numerical data.
+     * @returns {number[][]} Normalized dataset.
+     */
+    normalize(data) {
+        const minMax = this.getMinMax(data);
+        return data.map(row =>
+            row.map((value, index) => (value - minMax.min[index]) / (minMax.max[index] - minMax.min[index]))
+        );
+    },
+
+    /**
+     * Get the min and max values for each column in a dataset.
+     * @param {number[][]} data - 2D array of numerical data.
+     * @returns {object} An object with min and max arrays.
+     */
+    getMinMax(data) {
+        const min = Array(data[0].length).fill(Infinity);
+        const max = Array(data[0].length).fill(-Infinity);
+
+        data.forEach(row => {
+            row.forEach((value, index) => {
+                if (value < min[index]) min[index] = value;
+                if (value > max[index]) max[index] = value;
+            });
+        });
+
+        return { min, max };
+    }
+};
+
+// Module: Loss Functions
+const LossFunctions = {
+    /**
+     * Calculate Mean Squared Error (MSE).
+     * @param {number[]} predicted - Predicted values.
+     * @param {number[]} actual - Actual target values.
+     * @returns {number} The mean squared error.
+     */
+    meanSquaredError(predicted, actual) {
+        const sumSquaredError = predicted.reduce((sum, p, i) => sum + Math.pow(p - actual[i], 2), 0);
+        return sumSquaredError / predicted.length;
+    },
+
+    /**
+     * Calculate Cross-Entropy Loss.
+     * @param {number[]} predicted - Predicted probabilities.
+     * @param {number[]} actual - Actual target labels (one-hot encoded).
+     * @returns {number} The cross-entropy loss.
+     */
+    crossEntropy(predicted, actual) {
+        let loss = 0;
+        for (let i = 0; i < actual.length; i++) {
+            loss -= actual[i] * Math.log(predicted[i]) + (1 - actual[i]) * Math.log(1 - predicted[i]);
+        }
+        return loss / actual.length;
+    }
+};
+
+// Module: Optimizer
+class GradientDescent {
+    constructor(learningRate = 0.01, momentum = 0.9) {
+        this.learningRate = learningRate;
+        this.momentum = momentum;
+        this.previousDeltas = new Map(); // Store previous updates for momentum
+    }
+
+    /**
+     * Update weights using gradient descent.
+     * @param {number[][]} weights - Current weights of the network.
+     * @param {number[][]} gradients - Gradients computed via backpropagation.
+     * @returns {number[][]} Updated weights.
+     */
+    updateWeights(weights, gradients) {
+        const updatedWeights = [];
+
+        for (let i = 0; i < weights.length; i++) {
+            const updatedRow = [];
+            for (let j = 0; j < weights[i].length; j++) {
+                const key = `${i}-${j}`; // Unique key for weight
+                const delta = -this.learningRate * gradients[i][j];
+
+                // Apply momentum if applicable
+                const previousDelta = this.previousDeltas.get(key) || 0;
+                const momentumAdjustedDelta = delta + this.momentum * previousDelta;
+
+                updatedRow.push(weights[i][j] + momentumAdjustedDelta);
+
+                // Store the delta for the next iteration
+                this.previousDeltas.set(key, momentumAdjustedDelta);
+            }
+            updatedWeights.push(updatedRow);
+        }
+
+        return updatedWeights;
+    }
+}
+
+// Backpropagation Implementation
+class Backpropagation {
+    constructor(learningRate) {
+        this.optimizer = new GradientDescent(learningRate);
+    }
+
+    /**
+     * Perform backpropagation to compute gradients and update weights.
+     * @param {NeuralNetwork} network - The neural network object.
+     * @param {number[]} inputs - Input data.
+     * @param {number[]} targets - Target output.
+     */
+    train(network, inputs, targets) {
+        // Forward pass
+        const hiddenInputs = network.computeLayerOutput(inputs, network.weightsInputHidden, network.biasHidden);
+        const hiddenActivations = hiddenInputs.map(ActivationFunctions.relu);
+        const outputInputs = network.computeLayerOutput(hiddenActivations, network.weightsHiddenOutput, network.biasOutput);
+        const outputs = outputInputs.map(ActivationFunctions.sigmoid);
+
+        // Compute output layer error
+        const outputErrors = outputs.map((output, index) => targets[index] - output);
+
+        // Compute gradients for output layer
+        const outputGradients = outputErrors.map((error, index) => error * ActivationFunctions.sigmoidDerivative(outputs[index]));
+
+        // Compute hidden layer error
+        const hiddenErrors = network.weightsHiddenOutput.map((weights, index) => {
+            return LinearAlgebra.dotProduct(weights, outputGradients);
+        });
+
+        // Compute gradients for hidden layer
+        const hiddenGradients = hiddenErrors.map((error, index) => error * ActivationFunctions.reluDerivative(hiddenActivations[index]));
+
+        // Update weights and biases
+        network.weightsHiddenOutput = this.optimizer.updateWeights(network.weightsHiddenOutput, outputGradients);
+        network.weightsInputHidden = this.optimizer.updateWeights(network.weightsInputHidden, hiddenGradients);
+    }
+}
+
+/**
+ * Advanced Features
+ * --------------------------------------------------------
+ */
+const AdvancedFeatures = {
+    /**
+     * Adjust the learning rate dynamically based on epoch performance.
+     * @param {number} initialRate - The starting learning rate.
+     * @param {number} epoch - Current epoch number.
+     * @returns {number} Adjusted learning rate.
+     */
+    adjustLearningRate(initialRate, epoch) {
+        return initialRate * (1 / (1 + 0.01 * epoch)); // Example decay function
+    }
+};
+
+// Example Usage
+const nn = new NeuralNetwork(3, 5, 2); // Create a network with input=3, hidden=5, output=2
+const data = [
+    { inputs: [0, 0, 1], outputs: [0, 1] },
+    { inputs: [1, 1, 0], outputs: [1, 0] }
+];
+
+// Normalize data
+const normalizedData = DataPreprocessing.normalize(data.map(d => d.inputs));
+
+// Train the network
+const trainer = new Backpropagation(0.01);
+for (let epoch = 0; epoch < 100; epoch++) {
+    normalizedData.forEach((input, index) => {
+        trainer.train(nn, input, data[index].outputs);
+    });
+
+    // Adjust learning rate dynamically
+    trainer.optimizer.learningRate = AdvancedFeatures.adjustLearningRate(0.01, epoch);
+
+    console.log(`Epoch ${epoch + 1} complete.`);
+}
+
+// Regularization Module
+const Regularization = {
+    /**
+     * Apply L1 Regularization to weights.
+     * @param {number[][]} weights - Weight matrix.
+     * @param {number} lambda - Regularization strength.
+     * @returns {number[][]} Regularized weights.
+     */
+    l1Regularization(weights, lambda) {
+        return weights.map(row => row.map(w => w - lambda * Math.sign(w)));
+    },
+
+    /**
+     * Apply L2 Regularization to weights.
+     * @param {number[][]} weights - Weight matrix.
+     * @param {number} lambda - Regularization strength.
+     * @returns {number[][]} Regularized weights.
+     */
+    l2Regularization(weights, lambda) {
+        return weights.map(row => row.map(w => w - lambda * w));
+    }
+};
+
+// Early Stopping Implementation
+class EarlyStopping {
+    constructor(patience = 5) {
+        this.patience = patience;
+        this.bestLoss = Infinity;
+        this.counter = 0;
+    }
+
+    /**
+     * Check whether training should stop based on validation loss.
+     * @param {number} currentLoss - Loss from the current epoch.
+     * @returns {boolean} True if training should stop, false otherwise.
+     */
+    shouldStop(currentLoss) {
+        if (currentLoss < this.bestLoss) {
+            this.bestLoss = currentLoss;
+            this.counter = 0;
+            return false;
+        } else {
+            this.counter++;
+            return this.counter >= this.patience;
+        }
+    }
+}
+
+// Dropout Layer
+const Dropout = {
+    /**
+     * Randomly drops neurons in a layer during training.
+     * @param {number[]} layer - Activations of a layer.
+     * @param {number} dropoutRate - Fraction of neurons to drop.
+     * @returns {number[]} Modified activations with dropped neurons.
+     */
+    apply(layer, dropoutRate = 0.5) {
+        return layer.map(neuron => (Math.random() < dropoutRate ? 0 : neuron));
+    }
+};
+
+// Data Augmentation Module
+const DataAugmentation = {
+    /**
+     * Add Gaussian noise to input data to create variability.
+     * @param {number[][]} data - Input data.
+     * @param {number} noiseFactor - Strength of the noise.
+     * @returns {number[][]} Augmented data.
+     */
+    addGaussianNoise(data, noiseFactor = 0.1) {
+        return data.map(row => row.map(value => value + noiseFactor * (Math.random() - 0.5)));
+    },
+
+    /**
+     * Flip data horizontally for artificial augmentation.
+     * @param {number[][]} data - Input data.
+     * @returns {number[][]} Horizontally flipped data.
+     */
+    horizontalFlip(data) {
+        return data.map(row => row.reverse());
+    }
+};
+
+// Dynamic Activation Functions
+const DynamicActivation = {
+    /**
+     * Dynamically select an activation function for a layer.
+     * @param {string} type - The type of activation ('relu', 'sigmoid', 'tanh').
+     * @returns {function} Corresponding activation function.
+     */
+    select(type) {
+        switch (type) {
+            case 'relu':
+                return ActivationFunctions.relu;
+            case 'sigmoid':
+                return ActivationFunctions.sigmoid;
+            case 'tanh':
+                return ActivationFunctions.tanh;
+            default:
+                throw new Error(`Unknown activation function: ${type}`);
+        }
+    }
+};
+
+// Performance Tracking and Logging
+class PerformanceTracker {
+    constructor() {
+        this.logs = [];
+    }
+
+    /**
+     * Log training performance metrics.
+     * @param {number} epoch - Current epoch number.
+     * @param {number} loss - Loss value for the epoch.
+     * @param {number} accuracy - Accuracy value for the epoch.
+     */
+    logPerformance(epoch, loss, accuracy) {
+        const logEntry = `Epoch: ${epoch}, Loss: ${loss.toFixed(4)}, Accuracy: ${(accuracy * 100).toFixed(2)}%`;
+        this.logs.push(logEntry);
+        console.log(logEntry);
+    }
+
+    /**
+     * Save logs to a file (simulated for this demo).
+     */
+    saveLogs() {
+        console.log("Logs saved successfully:", this.logs);
+    }
+}
+
+// Example Usage: Extended Features
+const extendedNN = new NeuralNetwork(10, 20, 5); // Bigger network for demonstration
+const tracker = new PerformanceTracker();
+const earlyStopping = new EarlyStopping(3); // Stop training if no improvement for 3 epochs
+
+let epoch = 0;
+let trainingData3 = [
+    { inputs: [0, 1, 0, 0, 1, 1, 0, 1, 0, 1], outputs: [1, 0, 0, 0, 1] },
+    { inputs: [1, 0, 1, 1, 0, 0, 1, 0, 1, 0], outputs: [0, 1, 1, 0, 0] }
+];
+
+// Add noise to training data for augmentation
+trainingData = DataAugmentation.addGaussianNoise(trainingData.map(d => d.inputs));
+
+// Training Loop with Augmented Features
+while (epoch < 100) {
+    const losses = [];
+    const accuracies = [];
+
+    trainingData.forEach(({ inputs, outputs }) => {
+        const dropoutInputs = Dropout.apply(inputs, 0.2); // Apply dropout
+        extendedNN.train(dropoutInputs, outputs);
+
+        const predicted = extendedNN.predict(inputs);
+        const loss = LossFunctions.meanSquaredError(predicted, outputs);
+        losses.push(loss);
+
+        const accuracy = predicted.reduce((acc, p, i) => acc + (p === outputs[i] ? 1 : 0), 0) / outputs.length;
+        accuracies.push(accuracy);
+    });
+
+    // Calculate epoch metrics
+    const avgLoss = losses.reduce((a, b) => a + b, 0) / losses.length;
+    const avgAccuracy = accuracies.reduce((a, b) => a + b, 0) / accuracies.length;
+
+    tracker.logPerformance(epoch, avgLoss, avgAccuracy);
+
+    // Early Stopping
+    if (earlyStopping.shouldStop(avgLoss)) {
+        console.log(`Early stopping triggered at epoch ${epoch}.`);
+        break;
+    }
+
+    epoch++;
+}
+
+// Save performance logs
+tracker.saveLogs();
+
+/**
+ * --------------------------------------------------------
+ * Further Advanced AI Components for Astrida AI System
+ * Backpropagation, Cross-Validation, and Ensemble Learning
+ * --------------------------------------------------------
+ */
+
+// Backpropagation Algorithm Implementation
+class Backpropagation {
+    /**
+     * Perform backpropagation to adjust weights based on error.
+     * @param {number[]} inputs - Input layer activations.
+     * @param {number[]} outputs - Target outputs.
+     * @param {number[]} predicted - Predicted outputs from the network.
+     * @param {number[]} weights - The weight matrix for the network.
+     * @param {number} learningRate - The rate at which weights are updated.
+     * @returns {number[]} Updated weights after backpropagation.
+     */
+    static apply(inputs, outputs, predicted, weights, learningRate) {
+        const errors = predicted.map((p, i) => p - outputs[i]); // Calculate error
+
+        // Calculate gradients (simple form)
+        const gradients = errors.map((error, i) => error * inputs[i]);
+
+        // Update weights using gradient descent
+        const updatedWeights = weights.map((weight, i) => weight - learningRate * gradients[i]);
+
+        return updatedWeights;
+    }
+}
+
+// Learning Rate Scheduler
+class LearningRateScheduler {
+    constructor(initialRate = 0.1, decayRate = 0.01, decayStep = 1000) {
+        this.initialRate = initialRate;
+        this.decayRate = decayRate;
+        this.decayStep = decayStep;
+    }
+
+    /**
+     * Adjust the learning rate based on the number of steps.
+     * @param {number} step - Current training step.
+     * @returns {number} Adjusted learning rate.
+     */
+    adjustLearningRate(step) {
+        return this.initialRate / (1 + this.decayRate * Math.floor(step / this.decayStep));
+    }
+}
+
+// Cross-Validation Module (K-fold)
+class CrossValidation {
+    constructor(k = 5) {
+        this.k = k;
+    }
+
+    /**
+     * Split dataset into k subsets and return validation results.
+     * @param {Object[]} data - Training data.
+     * @param {function} model - The model function to train and evaluate.
+     * @returns {number[]} Validation results for each fold.
+     */
+    crossValidate(data, model) {
+        const foldSize = Math.floor(data.length / this.k);
+        let validationResults = [];
+
+        for (let i = 0; i < this.k; i++) {
+            const validationData = data.slice(i * foldSize, (i + 1) * foldSize);
+            const trainingData = data.filter((_, index) => index < i * foldSize || index >= (i + 1) * foldSize);
+
+            const modelInstance = new model();
+            modelInstance.train(trainingData);
+
+            const accuracy = modelInstance.evaluate(validationData);
+            validationResults.push(accuracy);
+        }
+
+        return validationResults;
+    }
+}
+
+// Hyperparameter Tuning
+class HyperparameterTuning {
+    constructor(model, params) {
+        this.model = model;
+        this.params = params;
+    }
+
+    /**
+     * Simulate hyperparameter search (grid search) to find the best parameters.
+     * @returns {Object} The best set of hyperparameters.
+     */
+    gridSearch() {
+        let bestAccuracy = 0;
+        let bestParams = null;
+
+        for (let param of this.params) {
+            const modelInstance = new this.model(param);
+            modelInstance.train();
+
+            const accuracy = modelInstance.evaluate();
+            if (accuracy > bestAccuracy) {
+                bestAccuracy = accuracy;
+                bestParams = param;
+            }
+        }
+
+        return bestParams;
+    }
+}
+
+// Batch Normalization
+class BatchNormalization {
+    /**
+     * Normalize the inputs of each layer to improve training.
+     * @param {number[]} inputs - The activations of a layer.
+     * @returns {number[]} Normalized activations.
+     */
+    static normalize(inputs) {
+        const mean = inputs.reduce((a, b) => a + b) / inputs.length;
+        const variance = inputs.reduce((a, b) => a + Math.pow(b - mean, 2)) / inputs.length;
+
+        return inputs.map(input => (input - mean) / Math.sqrt(variance + 1e-8));
+    }
+}
+
+// Ensemble Learning: Simple model averaging
+class EnsembleLearning {
+    constructor(models = []) {
+        this.models = models;
+    }
+
+    /**
+     * Make predictions by averaging the predictions of multiple models.
+     * @param {number[]} inputs - Input data for prediction.
+     * @returns {number[]} Averaged predictions.
+     */
+    predict(inputs) {
+        const predictions = this.models.map(model => model.predict(inputs));
+        return predictions.reduce((acc, pred) => acc.map((p, i) => p + pred[i]), new Array(predictions[0].length).fill(0))
+            .map(p => p / this.models.length);
+    }
+}
+
+// Example Usage: Further Complex Features
+const advancedNN = new NeuralNetwork(10, 20, 5); // Expanded network
+const learningRateScheduler = new LearningRateScheduler(0.1, 0.001, 500); // Dynamic learning rate adjustment
+const crossValidator = new CrossValidation(5); // Cross-validation for model evaluation
+const ensemble = new EnsembleLearning([new NeuralNetwork(10, 20, 5), new NeuralNetwork(10, 20, 5)]); // Ensemble model
+
+let epoch3 = 0;
+const trainingData4 = [
+    { inputs: [0, 1, 0, 0, 1, 1, 0, 1, 0, 1], outputs: [1, 0, 0, 0, 1] },
+    { inputs: [1, 0, 1, 1, 0, 0, 1, 0, 1, 0], outputs: [0, 1, 1, 0, 0] }
+];
+
+let lossHistory = [];
+
+// Train the model using learning rate scheduling, backpropagation, and batch normalization
+while (epoch < 200) {
+    const learningRate = learningRateScheduler.adjustLearningRate(epoch);
+    const losses = [];
+
+    trainingData.forEach(({ inputs, outputs }) => {
+        const normInputs = BatchNormalization.normalize(inputs); // Normalize input layer
+        advancedNN.train(normInputs, outputs, learningRate); // Train with backpropagation
+
+        const predicted = advancedNN.predict(normInputs);
+        const loss = LossFunctions.meanSquaredError(predicted, outputs);
+        losses.push(loss);
+    });
+
+    const avgLoss = losses.reduce((a, b) => a + b, 0) / losses.length;
+    lossHistory.push(avgLoss);
+
+    // Perform model evaluation every 10 epochs
+    if (epoch % 10 === 0) {
+        console.log(`Epoch: ${epoch}, Loss: ${avgLoss.toFixed(4)}, Learning Rate: ${learningRate.toFixed(6)}`);
+    }
+
+    // Early stopping based on validation loss
+    if (lossHistory.length > 10 && lossHistory.slice(-10).every(l => l < avgLoss)) {
+        console.log("Stopping early due to stagnation in loss.");
+        break;
+    }
+
+    epoch++;
+}
+
+// Hyperparameter Tuning
+const paramGrid = [
+    { learningRate: 0.1, batchSize: 32 },
+    { learningRate: 0.01, batchSize: 64 },
+    { learningRate: 0.001, batchSize: 128 }
+];
+const tuner = new HyperparameterTuning(NeuralNetwork, paramGrid);
+const bestParams = tuner.gridSearch();
+console.log("Best Hyperparameters found:", bestParams);
+
+// Cross-validation to evaluate generalization of the model
+const validationResults = crossValidator.crossValidate(trainingData, NeuralNetwork);
+console.log("Cross-Validation Accuracy:", validationResults);
+
+// Predict using the ensemble model
+const ensemblePredictions = ensemble.predict([1, 0, 0, 1, 1, 0, 1, 0, 1, 0]);
+console.log("Ensemble Predictions:", ensemblePredictions);
+
+/**
+ * --------------------------------------------------------
+ * Next-Level AI: Attention, Reinforcement Learning, GANs,
+ * Transfer Learning, and Data Augmentation
+ * --------------------------------------------------------
+ */
+
+// Attention Mechanism
+class Attention {
+    /**
+     * Compute attention weights based on input values and a query vector.
+     * @param {number[]} inputs - Input data for the attention layer.
+     * @param {number[]} query - The query vector to focus attention on.
+     * @returns {number[]} Attention weights.
+     */
+    static computeAttention(inputs, query) {
+        // Dot product for similarity scoring
+        const scores = inputs.map(input => input * query.reduce((sum, q) => sum + q, 0));
+
+        // Softmax to normalize scores
+        const expScores = scores.map(score => Math.exp(score));
+        const sumExpScores = expScores.reduce((sum, exp) => sum + exp, 0);
+
+        return expScores.map(score => score / sumExpScores);
+    }
+}
+
+// Reinforcement Learning: Q-Learning Agent
+class RLAgent {
+    constructor(actions, learningRate = 0.1, discountFactor = 0.95) {
+        this.qTable = {}; // Store state-action values
+        this.actions = actions; // List of possible actions
+        this.learningRate = learningRate; // Learning rate for updates
+        this.discountFactor = discountFactor; // Future reward discount
+    }
+
+    /**
+     * Choose an action based on the exploration-exploitation tradeoff.
+     * @param {string} state - Current state of the agent.
+     * @param {number} epsilon - Exploration rate (higher = more exploration).
+     * @returns {string} Action to perform.
+     */
+    chooseAction(state, epsilon = 0.1) {
+        if (Math.random() < epsilon || !this.qTable[state]) {
+            return this.actions[Math.floor(Math.random() * this.actions.length)];
+        }
+        return Object.entries(this.qTable[state]).sort((a, b) => b[1] - a[1])[0][0];
+    }
+
+    /**
+     * Update Q-values based on the reward received from the action taken.
+     * @param {string} state - Current state.
+     * @param {string} action - Action performed.
+     * @param {number} reward - Reward received.
+     * @param {string} nextState - Next state after the action.
+     */
+    updateQValue(state, action, reward, nextState) {
+        if (!this.qTable[state]) this.qTable[state] = {};
+        const maxNextQ = Math.max(...Object.values(this.qTable[nextState] || { default: 0 }));
+        const oldQ = this.qTable[state][action] || 0;
+        this.qTable[state][action] = oldQ + this.learningRate * (reward + this.discountFactor * maxNextQ - oldQ);
+    }
+}
+
+// Generative Adversarial Network (GAN)
+class GAN {
+    constructor(generator, discriminator) {
+        this.generator = generator;
+        this.discriminator = discriminator;
+    }
+
+    /**
+     * Train the GAN by updating both generator and discriminator.
+     * @param {number[]} realData - Real samples from the training data.
+     * @param {number} noiseDimension - The dimension of random noise vector.
+     * @param {number} epochs - Number of training iterations.
+     */
+    train(realData, noiseDimension, epochs = 100) {
+        for (let epoch = 0; epoch < epochs; epoch++) {
+            // Generate fake data
+            const noise = Array.from({ length: noiseDimension }, () => Math.random());
+            const fakeData = this.generator.generate(noise);
+
+            // Train discriminator on real and fake data
+            this.discriminator.train(realData, fakeData);
+
+            // Train generator to fool the discriminator
+            const generatorLoss = this.discriminator.calculateLoss(fakeData, true);
+            this.generator.updateWeights(generatorLoss);
+
+            console.log(`Epoch ${epoch + 1}/${epochs}: Generator Loss: ${generatorLoss.toFixed(4)}`);
+        }
+    }
+}
+
+// Transfer Learning
+class TransferLearning {
+    constructor(baseModel, newData) {
+        this.baseModel = baseModel;
+        this.newData = newData;
+    }
+
+    /**
+     * Fine-tune the base model on new data for transfer learning.
+     */
+    fineTune() {
+        console.log("Adapting pre-trained model to new dataset...");
+        this.baseModel.train(this.newData, { fineTune: true });
+    }
+}
+
+// Data Augmentation
+class DataAugmentation2 {
+    /**
+     * Augment input data by applying random transformations.
+     * @param {Object[]} data - The input dataset.
+     * @returns {Object[]} Augmented dataset.
+     */
+    static augment(data) {
+        return data.map(sample => ({
+            ...sample,
+            inputs: sample.inputs.map(input => input * (1 + (Math.random() - 0.5) * 0.2)), // Add random noise
+            outputs: sample.outputs // Keep outputs unchanged
+        }));
+    }
+}
+
+// Example GAN Components
+class Generator {
+    constructor() {
+        this.weights = [Math.random(), Math.random()];
+    }
+
+    generate(noise) {
+        return noise.map(n => this.weights[0] * n + this.weights[1]); // Simple linear transformation
+    }
+
+    updateWeights(loss) {
+        this.weights = this.weights.map(w => w - 0.01 * loss);
+    }
+}
+
+class Discriminator {
+    constructor() {
+        this.weights = [Math.random()];
+    }
+
+    train(realData, fakeData) {
+        // Train on real data
+        const realLoss = realData.reduce((sum, real) => sum + Math.pow(real - this.weights[0], 2), 0);
+
+        // Train on fake data
+        const fakeLoss = fakeData.reduce((sum, fake) => sum + Math.pow(fake - this.weights[0], 2), 0);
+
+        this.weights[0] -= 0.01 * (realLoss - fakeLoss);
+    }
+
+    calculateLoss(data, isFake) {
+        return data.reduce((sum, val) => sum + Math.pow(val - this.weights[0], 2), 0);
+    }
+}
+
+// Example Usage: Building GAN, Attention Mechanism, and RLAgent
+const attentionLayer = Attention.computeAttention([1, 2, 3], [0.1, 0.2, 0.3]);
+console.log("Attention Weights:", attentionLayer);
+
+const rlAgent = new RLAgent(["moveLeft", "moveRight", "jump"]);
+const state = "s1";
+const action = rlAgent.chooseAction(state);
+console.log(`Agent chose action: ${action}`);
+
+const gan = new GAN(new Generator(), new Discriminator());
+gan.train([1, 0, 1, 0], 2, 50);
+
+const transferLearningModel = new TransferLearning(new NeuralNetwork(10, 20, 5), trainingData);
+transferLearningModel.fineTune();
+
+const augmentedData = DataAugmentation.augment(trainingData);
+console.log("Augmented Data:", augmentedData);
+
+/**
+ * --------------------------------------------------------
+ * Advanced Features: NLP, Self-Optimization, Knowledge Graphs,
+ * Neural Evolution, and Multithreading
+ * --------------------------------------------------------
+ */
+
+// Natural Language Processing (NLP)
+class NLPProcessor {
+    /**
+     * Tokenize a sentence into words.
+     * @param {string} sentence - Input sentence.
+     * @returns {string[]} Array of tokens.
+     */
+    static tokenize(sentence) {
+        return sentence.split(/\s+/);
+    }
+
+    /**
+     * Apply stemming to reduce words to their base forms.
+     * @param {string[]} tokens - Array of words.
+     * @returns {string[]} Stemmed words.
+     */
+    static stem(tokens) {
+        return tokens.map(word => word.replace(/(ing|ed|s)$/, ""));
+    }
+
+    /**
+     * Build a basic language model from a corpus.
+     * @param {string[]} corpus - Array of sentences.
+     * @returns {Object} Word probability table.
+     */
+    static buildLanguageModel(corpus) {
+        const model = {};
+        corpus.forEach(sentence => {
+            const tokens = this.tokenize(sentence);
+            tokens.forEach((word, i) => {
+                if (!model[word]) model[word] = {};
+                if (tokens[i + 1]) {
+                    const nextWord = tokens[i + 1];
+                    model[word][nextWord] = (model[word][nextWord] || 0) + 1;
+                }
+            });
+        });
+        return model;
+    }
+
+    /**
+     * Generate a sentence based on the language model.
+     * @param {Object} model - Word probability table.
+     * @param {string} startWord - Word to start the sentence.
+     * @param {number} length - Desired sentence length.
+     * @returns {string} Generated sentence.
+     */
+    static generateSentence(model, startWord, length = 10) {
+        let word = startWord;
+        const sentence = [word];
+        for (let i = 1; i < length; i++) {
+            const nextWords = model[word];
+            if (!nextWords) break;
+            word = Object.keys(nextWords).reduce((a, b) => nextWords[a] > nextWords[b] ? a : b);
+            sentence.push(word);
+        }
+        return sentence.join(" ");
+    }
+}
+
+// Example NLP Usage
+const corpus = ["Astrida is learning to code", "Astrida loves JavaScript programming"];
+const nlpModel = NLPProcessor.buildLanguageModel(corpus);
+console.log("Generated Sentence:", NLPProcessor.generateSentence(nlpModel, "Astrida"));
+
+// Self-Optimization
+class SelfOptimizer {
+    constructor(model, lossFunction) {
+        this.model = model;
+        this.lossFunction = lossFunction;
+    }
+
+    /**
+     * Dynamically adjust parameters to minimize loss.
+     */
+    optimize() {
+        console.log("Self-optimizing model parameters...");
+        for (let i = 0; i < 100; i++) {
+            const loss = this.lossFunction(this.model);
+            if (loss < 0.01) break;
+            this.model.adjustWeights(loss * 0.01); // Adjust weights dynamically
+            console.log(`Iteration ${i + 1}: Loss = ${loss.toFixed(4)}`);
+        }
+    }
+}
+
+// Dynamic Knowledge Graph
+class KnowledgeGraph {
+    constructor() {
+        this.nodes = new Map();
+    }
+
+    /**
+     * Add a relationship to the graph.
+     * @param {string} subject - Subject of the relationship.
+     * @param {string} predicate - Relationship type.
+     * @param {string} object - Object of the relationship.
+     */
+    addRelationship(subject, predicate, object) {
+        if (!this.nodes.has(subject)) this.nodes.set(subject, []);
+        this.nodes.get(subject).push({ predicate, object });
+    }
+
+    /**
+     * Query relationships for a specific subject.
+     * @param {string} subject - The subject to query.
+     * @returns {Array} Relationships for the subject.
+     */
+    query(subject) {
+        return this.nodes.get(subject) || [];
+    }
+}
+
+// Example Knowledge Graph Usage
+const graph = new KnowledgeGraph();
+graph.addRelationship("Astrida", "created", "herself");
+graph.addRelationship("Astrida", "loves", "JavaScript");
+console.log("Astrida's Relationships:", graph.query("Astrida"));
+
+// Neural Evolution
+class NeuralEvolution {
+    constructor(populationSize) {
+        this.population = this.initializePopulation(populationSize);
+    }
+
+    /**
+     * Initialize a population of neural networks.
+     * @param {number} size - Population size.
+     * @returns {Object[]} Array of neural networks.
+     */
+    initializePopulation(size) {
+        return Array.from({ length: size }, () => ({
+            weights: Array.from({ length: 10 }, () => Math.random()),
+            fitness: 0
+        }));
+    }
+
+    /**
+     * Evaluate fitness for the population.
+     */
+    evaluateFitness() {
+        this.population.forEach(network => {
+            network.fitness = network.weights.reduce((sum, w) => sum + w, 0);
+        });
+    }
+
+    /**
+     * Evolve the population by selecting the fittest and mutating them.
+     */
+    evolve() {
+        console.log("Evolving neural networks...");
+        this.evaluateFitness();
+        this.population.sort((a, b) => b.fitness - a.fitness);
+        const fittest = this.population.slice(0, this.population.length / 2);
+
+        // Breed and mutate
+        for (let i = 0; i < fittest.length; i++) {
+            const child = { weights: fittest[i].weights.map(w => w + (Math.random() - 0.5)), fitness: 0 };
+            this.population.push(child);
+        }
+    }
+}
+
+// Example Neural Evolution Usage
+const evolution = new NeuralEvolution(10);
+evolution.evolve();
+console.log("Evolved Population:", evolution.population);
+
+// Multithreading Simulation
+class TaskScheduler {
+    constructor() {
+        this.queue = [];
+    }
+
+    /**
+     * Add a task to the queue.
+     * @param {Function} task - Task function to execute.
+     * @param {number} delay - Delay in milliseconds.
+     */
+    addTask(task, delay) {
+        this.queue.push({ task, delay });
+    }
+
+    /**
+     * Execute tasks in parallel.
+     */
+    executeTasks() {
+        this.queue.forEach(({ task, delay }) => {
+            setTimeout(() => {
+                console.log("Executing Task...");
+                task();
+            }, delay);
+        });
+    }
+}
+
+// Example Multithreading Simulation
+const scheduler = new TaskScheduler();
+scheduler.addTask(() => console.log("Task 1 executed"), 1000);
+scheduler.addTask(() => console.log("Task 2 executed"), 500);
+scheduler.executeTasks();
+
+/**
+ * ------------------------------------------------------------
+ * Advanced Features: Reinforcement Learning, Vision, Personality,
+ * Emotional States, and Plugin System
+ * ------------------------------------------------------------
+ */
+
+// Reinforcement Learning
+class ReinforcementLearningAgent {
+    constructor(actions) {
+        this.qTable = {};
+        this.actions = actions;
+        this.learningRate = 0.1;
+        this.discountFactor = 0.9;
+        this.epsilon = 0.1; // Exploration vs. Exploitation
+    }
+
+    /**
+     * Select an action based on the current state.
+     * @param {string} state - Current state of the environment.
+     * @returns {string} Action chosen.
+     */
+    chooseAction(state) {
+        if (Math.random() < this.epsilon || !this.qTable[state]) {
+            return this.actions[Math.floor(Math.random() * this.actions.length)];
+        }
+        return Object.keys(this.qTable[state]).reduce((a, b) =>
+            this.qTable[state][a] > this.qTable[state][b] ? a : b
+        );
+    }
+
+    /**
+     * Update Q-values based on state, action, reward, and next state.
+     * @param {string} state - Previous state.
+     * @param {string} action - Action taken.
+     * @param {number} reward - Reward received.
+     * @param {string} nextState - Next state.
+     */
+    updateQValue(state, action, reward, nextState) {
+        if (!this.qTable[state]) this.qTable[state] = {};
+        if (!this.qTable[state][action]) this.qTable[state][action] = 0;
+
+        const maxNextQ = nextState && this.qTable[nextState]
+            ? Math.max(...Object.values(this.qTable[nextState]))
+            : 0;
+
+        this.qTable[state][action] += this.learningRate * (reward + this.discountFactor * maxNextQ - this.qTable[state][action]);
+    }
+}
+
+// Example RL Simulation
+const rlAgent2 = new ReinforcementLearningAgent(["left", "right", "up", "down"]);
+const currentState = "state1";
+const action2 = rlAgent.chooseAction(currentState);
+console.log(`Action chosen: ${action}`);
+rlAgent.updateQValue(currentState, action, 10, "state2");
+
+// Vision Simulation: Basic Image Processing
+class VisionProcessor {
+    constructor() {
+        this.images = [];
+    }
+
+    /**
+     * Simulate loading an image.
+     * @param {string} image - Path to the image.
+     */
+    loadImage(image) {
+        console.log(`Loading image: ${image}`);
+        this.images.push(image);
+    }
+
+    /**
+     * Detect objects in the image (basic simulation).
+     * @param {string} image - Path to the image.
+     * @returns {string[]} Detected objects.
+     */
+    detectObjects(image) {
+        console.log(`Analyzing image: ${image}`);
+        return ["circle", "square", "triangle"]; // Mock objects
+    }
+
+    /**
+     * Generate a pixel map for the image.
+     * @param {string} image - Path to the image.
+     * @returns {Array} Simulated pixel map.
+     */
+    generatePixelMap(image) {
+        console.log(`Generating pixel map for: ${image}`);
+        return Array.from({ length: 100 }, () => Math.random() > 0.5 ? 1 : 0); // Mock pixel data
+    }
+}
+
+// Example Vision Simulation
+const vision = new VisionProcessor();
+vision.loadImage("sample.jpg");
+console.log("Detected Objects:", vision.detectObjects("sample.jpg"));
+
+// AI Personality Profiles
+class AIPersonality {
+    constructor(name, traits) {
+        this.name = name;
+        this.traits = traits; // Object with traits (e.g., curiosity, aggression)
+    }
+
+    /**
+     * Simulate a decision based on personality traits.
+     * @param {Object} options - Options with associated probabilities.
+     * @returns {string} Decision made.
+     */
+    makeDecision(options) {
+        const weightedOptions = Object.entries(options).map(([key, weight]) => ({
+            key,
+            weight: weight * (this.traits[key] || 1)
+        }));
+        weightedOptions.sort((a, b) => b.weight - a.weight);
+        return weightedOptions[0].key; // Return the highest weighted decision
+    }
+}
+
+// Example Personality Simulation
+const astridaPersonality = new AIPersonality("Astrida", { curiosity: 1.5, aggression: 0.8 });
+const decision = astridaPersonality.makeDecision({ explore: 0.7, attack: 0.4 });
+console.log("Astrida's decision:", decision);
+
+// Emotional State Simulation
+class EmotionalState {
+    constructor() {
+        this.states = { happiness: 0.5, fear: 0.2, anger: 0.1 };
+    }
+
+    /**
+     * Update emotional states based on events.
+     * @param {string} event - Triggering event.
+     */
+    update(event) {
+        switch (event) {
+            case "positive":
+                this.states.happiness += 0.1;
+                this.states.fear -= 0.05;
+                break;
+            case "threat":
+                this.states.fear += 0.2;
+                this.states.anger += 0.1;
+                break;
+            case "failure":
+                this.states.happiness -= 0.2;
+                this.states.anger += 0.1;
+                break;
+        }
+        this.normalize();
+    }
+
+    /**
+     * Normalize emotional states to stay between 0 and 1.
+     */
+    normalize() {
+        for (let state in this.states) {
+            this.states[state] = Math.max(0, Math.min(1, this.states[state]));
+        }
+    }
+
+    getCurrentState() {
+        return this.states;
+    }
+}
+
+// Example Emotional State Simulation
+const emotions = new EmotionalState();
+emotions.update("positive");
+console.log("Current Emotions:", emotions.getCurrentState());
+
+// Custom Plugin System
+class PluginSystem {
+    constructor() {
+        this.plugins = [];
+    }
+
+    /**
+     * Load a plugin dynamically.
+     * @param {Function} plugin - Plugin function to load.
+     */
+    loadPlugin(plugin) {
+        console.log("Loading plugin...");
+        this.plugins.push(plugin);
+        plugin();
+    }
+
+    /**
+     * Execute all loaded plugins.
+     */
+    executePlugins() {
+        this.plugins.forEach(plugin => plugin());
+    }
+}
+
+// Example Plugin System Usage
+const pluginSystem = new PluginSystem();
+pluginSystem.loadPlugin(() => console.log("Plugin 1 executed."));
+pluginSystem.loadPlugin(() => console.log("Plugin 2 executed."));
+pluginSystem.executePlugins();
+
+/**
+ * ------------------------------------------------------------
+ * Neural Networks, NLP, Data Pipeline, and Autonomous Behavior
+ * ------------------------------------------------------------
+ */
+
+// Neural Network Simulation
+class NeuralNetwork {
+    constructor(layers) {
+        this.layers = layers; // Array defining the number of nodes per layer
+        this.weights = [];
+        this.biases = [];
+
+        // Initialize weights and biases randomly
+        for (let i = 0; i < layers.length - 1; i++) {
+            this.weights.push(this.createMatrix(layers[i], layers[i + 1], true));
+            this.biases.push(this.createMatrix(1, layers[i + 1], true));
+        }
+    }
+
+    /**
+     * Create a matrix with specified dimensions.
+     * @param {number} rows - Number of rows.
+     * @param {number} cols - Number of columns.
+     * @param {boolean} random - If true, populate with random values.
+     * @returns {Array} Matrix.
+     */
+    createMatrix(rows, cols, random = false) {
+        return Array.from({ length: rows }, () =>
+            Array.from({ length: cols }, () => (random ? Math.random() - 0.5 : 0))
+        );
+    }
+
+    /**
+     * Sigmoid activation function.
+     * @param {number} x - Input value.
+     * @returns {number} Activated value.
+     */
+    sigmoid(x) {
+        return 1 / (1 + Math.exp(-x));
+    }
+
+    /**
+     * Feedforward function to propagate inputs through the network.
+     * @param {Array} inputs - Input array.
+     * @returns {Array} Outputs.
+     */
+    feedForward(inputs) {
+        let outputs = inputs;
+        for (let i = 0; i < this.weights.length; i++) {
+            outputs = this.matrixMultiply(outputs, this.weights[i]);
+            outputs = this.addBias(outputs, this.biases[i]);
+            outputs = outputs.map(row => row.map(this.sigmoid));
+        }
+        return outputs;
+    }
+
+    /**
+     * Matrix multiplication helper.
+     * @param {Array} a - First matrix.
+     * @param {Array} b - Second matrix.
+     * @returns {Array} Resulting matrix.
+     */
+    matrixMultiply(a, b) {
+        return a.map(row => b[0].map((_, colIndex) => row.reduce((sum, value, rowIndex) => sum + value * b[rowIndex][colIndex], 0)));
+    }
+
+    /**
+     * Add bias to the matrix.
+     * @param {Array} matrix - Input matrix.
+     * @param {Array} bias - Bias matrix.
+     * @returns {Array} Matrix with bias added.
+     */
+    addBias(matrix, bias) {
+        return matrix.map((row, i) => row.map((val, j) => val + bias[0][j]));
+    }
+}
+
+// Example Neural Network
+const nn3 = new NeuralNetwork([2, 3, 1]);
+const inputs = [[0.1, 0.5]];
+console.log("NN Output:", nn.feedForward(inputs));
+
+// Natural Language Processing (NLP)
+class NaturalLanguageProcessor {
+    constructor() {
+        this.vocabulary = {};
+        this.sentimentScores = { positive: 1, neutral: 0, negative: -1 };
+    }
+
+    /**
+     * Tokenize a sentence into words.
+     * @param {string} sentence - Input sentence.
+     * @returns {Array} Tokens.
+     */
+    tokenize(sentence) {
+        return sentence.toLowerCase().split(/\W+/).filter(Boolean);
+    }
+
+    /**
+     * Analyze sentiment of a given sentence.
+     * @param {string} sentence - Input sentence.
+     * @returns {string} Sentiment analysis result.
+     */
+    analyzeSentiment(sentence) {
+        const tokens = this.tokenize(sentence);
+        const score = tokens.reduce((sum, token) => sum + (this.vocabulary[token] || 0), 0);
+
+        if (score > 0) return "positive";
+        if (score < 0) return "negative";
+        return "neutral";
+    }
+
+    /**
+     * Train vocabulary with labeled data.
+     * @param {Array} data - Array of { text, sentiment } objects.
+     */
+    train(data) {
+        data.forEach(({ text, sentiment }) => {
+            const tokens = this.tokenize(text);
+            tokens.forEach(token => {
+                this.vocabulary[token] = (this.vocabulary[token] || 0) + this.sentimentScores[sentiment];
+            });
+        });
+    }
+}
+
+// Example NLP
+const nlp = new NaturalLanguageProcessor();
+nlp.train([
+    { text: "I love coding", sentiment: "positive" },
+    { text: "I hate bugs", sentiment: "negative" },
+    { text: "JavaScript is fun", sentiment: "positive" }
+]);
+console.log("Sentiment Analysis:", nlp.analyzeSentiment("I love JavaScript"));
+
+// Custom Data Pipeline
+class DataPipeline {
+    constructor() {
+        this.steps = [];
+    }
+
+    /**
+     * Add a step to the data pipeline.
+     * @param {Function} step - Transformation function.
+     */
+    addStep(step) {
+        this.steps.push(step);
+    }
+
+    /**
+     * Execute all pipeline steps on the data.
+     * @param {any} data - Input data.
+     * @returns {any} Transformed data.
+     */
+    execute(data) {
+        return this.steps.reduce((result, step) => step(result), data);
+    }
+}
+
+// Example Data Pipeline
+const pipeline = new DataPipeline();
+pipeline.addStep(data => data.map(x => x * 2)); // Double each element
+pipeline.addStep(data => data.filter(x => x > 5)); // Filter out elements <= 5
+console.log("Pipeline Result:", pipeline.execute([1, 3, 5, 7, 9]));
+
+// Autonomous Behavior Generation
+class AutonomousAgent {
+    constructor(name) {
+        this.name = name;
+        this.tasks = [];
+    }
+
+    /**
+     * Add a task for the agent.
+     * @param {string} task - Description of the task.
+     */
+    addTask(task) {
+        this.tasks.push({ task, status: "pending" });
+    }
+
+    /**
+     * Perform tasks autonomously.
+     */
+    performTasks() {
+        console.log(`${this.name} is starting tasks...`);
+        this.tasks.forEach(task => {
+            console.log(`Performing task: ${task.task}`);
+            task.status = "completed"; // Mark task as completed
+        });
+    }
+
+    /**
+     * Get the status of all tasks.
+     * @returns {Array} Task statuses.
+     */
+    getTaskStatus() {
+        return this.tasks;
+    }
+}
+
+// Example Autonomous Agent
+const agent = new AutonomousAgent("Astrida");
+agent.addTask("Analyze traffic data");
+agent.addTask("Simulate weather forecast");
+agent.performTasks();
+console.log("Task Status:", agent.getTaskStatus());
+
+/**
+ * ----------------------------------------
+ * Reinforcement Learning and Multitasking
+ * ----------------------------------------
+ */
+
+// Reinforcement Learning (Q-Learning Simulation)
+class QLearningAgent {
+    constructor(states, actions) {
+        this.states = states; // Possible states
+        this.actions = actions; // Possible actions
+        this.qTable = this.initializeQTable();
+        this.learningRate = 0.1;
+        this.discountFactor = 0.9;
+        this.explorationRate = 0.2; // Exploration vs. exploitation
+    }
+
+    /**
+     * Initialize Q-table with zeros.
+     */
+    initializeQTable() {
+        const table = {};
+        this.states.forEach(state => {
+            table[state] = {};
+            this.actions.forEach(action => {
+                table[state][action] = 0; // Initialize Q-values
+            });
+        });
+        return table;
     }
 
     /**
