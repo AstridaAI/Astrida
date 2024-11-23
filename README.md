@@ -1,6 +1,5 @@
-[https://astrida.xyz/](https://astrida.xyz/)\
-[https://x.com/Astridaxyz](https://x.com/Astridaxyz)\
-[https://github.com/AstridaAI/Astrida](https://github.com/AstridaAI/Astrida)
+[🌐 Web](https://astrida.xyz/)\
+[🐦 Twitter](https://x.com/Astridaxyz)\
 
 ![img-eN5ApYsCXIIOo4fgTvwPL](https://github.com/user-attachments/assets/5c7811bc-4056-41c7-8caf-4f32093dcd78)
                                                                                                         
