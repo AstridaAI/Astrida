@@ -2,12 +2,8 @@ https://astrida.xyz/
 https://x.com/Astridaxyz
 https://github.com/AstridaAI/Astrida
 
+![Astridahead-min](https://github.com/user-attachments/assets/f7b1a0aa-e1dc-49fa-8935-13f3ae21c3ce)
 
- ¦¦¦¦¦  ¦¦¦¦¦¦¦ ¦¦¦¦¦¦¦¦ ¦¦¦¦¦¦  ¦¦ ¦¦¦¦¦¦   ¦¦¦¦¦  
-¦¦   ¦¦ ¦¦         ¦¦    ¦¦   ¦¦ ¦¦ ¦¦   ¦¦ ¦¦   ¦¦ 
-¦¦¦¦¦¦¦ ¦¦¦¦¦¦¦    ¦¦    ¦¦¦¦¦¦  ¦¦ ¦¦   ¦¦ ¦¦¦¦¦¦¦ 
-¦¦   ¦¦      ¦¦    ¦¦    ¦¦   ¦¦ ¦¦ ¦¦   ¦¦ ¦¦   ¦¦ 
-¦¦   ¦¦ ¦¦¦¦¦¦¦    ¦¦    ¦¦   ¦¦ ¦¦ ¦¦¦¦¦¦  ¦¦   ¦¦ 
                                                                                                         
 
 Project Overview
